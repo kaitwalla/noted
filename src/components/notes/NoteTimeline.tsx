@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { useStore } from '../../store';
 import { NoteBubble } from './NoteBubble';
@@ -7,12 +7,33 @@ import type { Note } from '../../types';
 
 export function NoteTimeline() {
   const { notes, selectedNotebookId, fetchNotes } = useStore();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const prevNotesLengthRef = useRef(notes.length);
+  const prevNotebookIdRef = useRef(selectedNotebookId);
+  const initialLoadRef = useRef(true);
 
   useEffect(() => {
     if (selectedNotebookId) {
       fetchNotes(selectedNotebookId);
     }
   }, [selectedNotebookId, fetchNotes]);
+
+  // Auto-scroll to bottom on initial load or notebook change
+  useEffect(() => {
+    const notebookChanged = prevNotebookIdRef.current !== selectedNotebookId;
+    const isInitialLoad = initialLoadRef.current && notes.length > 0;
+    const newNotesAdded = notes.length > prevNotesLengthRef.current;
+
+    if ((notebookChanged || isInitialLoad || newNotesAdded) && containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+
+    prevNotesLengthRef.current = notes.length;
+    prevNotebookIdRef.current = selectedNotebookId;
+    if (notes.length > 0) {
+      initialLoadRef.current = false;
+    }
+  }, [notes.length, selectedNotebookId]);
 
   const groupedNotes = groupNotesByDate(notes);
 
@@ -29,7 +50,7 @@ export function NoteTimeline() {
 
   return (
     <div className="note-timeline">
-      <div className="notes-container">
+      <div className="notes-container" ref={containerRef}>
         {Object.entries(groupedNotes)
           .sort(([a], [b]) => b.localeCompare(a)) // newest date first
           .map(([date, dateNotes]) => (

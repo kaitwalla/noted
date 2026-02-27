@@ -74,7 +74,16 @@ export const useStore = create<AppState>((set, get) => ({
   // Notebook actions
   fetchNotebooks: async () => {
     const notebooks = await api.getNotebooks();
-    set({ notebooks });
+    const currentSelected = get().selectedNotebookId;
+    // Auto-select first notebook if none is selected
+    const selectedNotebookId = currentSelected || (notebooks.length > 0 ? notebooks[0].id : null);
+    set({ notebooks, selectedNotebookId });
+    // Fetch notes for auto-selected notebook
+    if (selectedNotebookId && !currentSelected) {
+      get().fetchNotes(selectedNotebookId).catch((error) => {
+        console.error('Failed to fetch notes:', error);
+      });
+    }
   },
 
   selectNotebook: (id) => {

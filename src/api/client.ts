@@ -166,6 +166,16 @@ class ApiClient {
     return response.data;
   }
 
+  async getImageSignedUrl(imageId: string): Promise<string> {
+    const response = await this.client.get<{ url: string }>(`/images/${imageId}/url`);
+    return response.data.url;
+  }
+
+  async getNoteImages(noteId: string): Promise<Image[]> {
+    const response = await this.client.get<Image[]>(`/notes/${noteId}/images`);
+    return response.data;
+  }
+
   getImageUrl(imageId: string): string {
     return `${API_URL}/images/${imageId}`;
   }

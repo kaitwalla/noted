@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import { api } from './api/client';
 import { useStore } from './store';
 import { LoginPage } from './components/auth/LoginPage';
@@ -48,10 +49,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="app-layout">
-      <NotebookSidebar />
+      <NotebookSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       <main className="main-content">
+        <button className="mobile-menu-btn" onClick={() => setSidebarOpen(true)}>
+          <Menu size={24} />
+        </button>
         <NoteTimeline />
       </main>
     </div>

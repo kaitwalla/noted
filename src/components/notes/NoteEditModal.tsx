@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import TiptapImage from '@tiptap/extension-image';
 import { X, Save } from 'lucide-react';
 import { useStore } from '../../store';
 import type { Note } from '../../types';
@@ -16,7 +17,7 @@ export function NoteEditModal({ note, onClose }: NoteEditModalProps) {
   const { updateNote } = useStore();
 
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, TiptapImage],
     content: note.content,
     editorProps: {
       attributes: {

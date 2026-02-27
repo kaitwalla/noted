@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, isValid } from 'date-fns';
 import { Check, Circle, Trash2, Edit2 } from 'lucide-react';
 import { useStore } from '../../store';
+import { api } from '../../api/client';
 import type { Note } from '../../types';
 import { NoteEditModal } from './NoteEditModal';
 
@@ -11,7 +12,17 @@ interface NoteBubbleProps {
 
 export function NoteBubble({ note }: NoteBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [images, setImages] = useState<Array<{ id: string; url: string }>>([]);
   const { toggleNoteDone, removeNote } = useStore();
+
+  // Fetch images for this note (re-fetch when note object changes)
+  useEffect(() => {
+    api.getNoteImages(note.id).then((noteImages) => {
+      setImages(noteImages.map((img) => ({ id: img.id, url: img.url })));
+    }).catch(() => {
+      setImages([]);
+    });
+  }, [note]);
 
   const handleToggle = () => {
     if (note.is_todo) {
@@ -33,7 +44,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
   }
 
   const renderContent = () => {
-    // Try to extract content from the Tiptap JSON
+    // Try to extract text content from the Tiptap JSON
     if (note.content && typeof note.content === 'object') {
       const content = note.content as { content?: TiptapNode[] };
       const elements: React.ReactNode[] = [];
@@ -42,11 +53,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
       const extractNodes = (nodes: TiptapNode[] | undefined): void => {
         if (!nodes) return;
         for (const node of nodes) {
-          if (node.type === 'image' && node.attrs?.src) {
-            elements.push(
-              <img key={key++} src={node.attrs.src} alt={node.attrs.alt || ''} />
-            );
-          } else if (node.text) {
+          if (node.text) {
             elements.push(<span key={key++}>{node.text}</span>);
           } else if (node.content) {
             extractNodes(node.content);
@@ -66,6 +73,10 @@ export function NoteBubble({ note }: NoteBubbleProps) {
         return <>{elements}</>;
       }
     }
+    // Don't show "(image)" placeholder if we have images
+    if (note.plain_text === '(image)' && images.length > 0) {
+      return null;
+    }
     return note.plain_text || '';
   };
 
@@ -78,7 +89,16 @@ export function NoteBubble({ note }: NoteBubbleProps) {
           </button>
         )}
         <div className="note-content">
-          <p className={note.is_done ? 'strikethrough' : ''}>{renderContent()}</p>
+          {renderContent() && (
+            <p className={note.is_done ? 'strikethrough' : ''}>{renderContent()}</p>
+          )}
+          {images.length > 0 && (
+            <div className="note-images">
+              {images.map((img) => (
+                <img key={img.id} src={img.url} alt="" />
+              ))}
+            </div>
+          )}
           {note.tags && note.tags.length > 0 && (
             <div className="note-tags">
               {note.tags.map((tag) => (
