@@ -9,6 +9,7 @@ export interface Notebook {
   id: string;
   user_id: string;
   title: string;
+  sort_order: number;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -28,6 +29,7 @@ export interface Note {
   updated_at: string;
   deleted_at?: string;
   tags?: Tag[];
+  tag_ids?: string[];
 }
 
 export interface Tag {
@@ -47,6 +49,7 @@ export interface Image {
   storage_key: string;
   size: number;
   created_at: string;
+  url: string;
 }
 
 export interface AuthResponse {

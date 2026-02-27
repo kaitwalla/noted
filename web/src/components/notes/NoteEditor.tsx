@@ -23,7 +23,7 @@ export function NoteEditor() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { selectedNotebookId, addNote, tags } = useStore();
+  const { selectedNotebookId, addNote, fetchNotes, tags } = useStore();
 
   const editor = useEditor({
     extensions: [
@@ -62,24 +62,18 @@ export function NoteEditor() {
         reminderDate ? new Date(reminderDate).toISOString() : undefined
       );
 
-      // Upload any pending images
-      for (const pending of pendingImages) {
-        try {
-          const image = await api.uploadImage(note.id, pending.file);
-          // Insert image URL into the note content
-          const imageUrl = api.getImageUrl(image.id);
-          editor.chain().focus().setImage({ src: imageUrl }).run();
-        } catch (err) {
-          console.error('Failed to upload image:', err);
-        }
-        // Revoke the object URL to free memory
-        URL.revokeObjectURL(pending.preview);
-      }
-
-      // If we added images, update the note content
+      // Upload any pending images (they're associated with the note by note_id)
       if (pendingImages.length > 0) {
-        const updatedContent = editor.getJSON();
-        await api.updateNote(note.id, { content: updatedContent });
+        for (const pending of pendingImages) {
+          try {
+            await api.uploadImage(note.id, pending.file);
+          } catch (err) {
+            console.error('Failed to upload image:', err);
+          }
+          URL.revokeObjectURL(pending.preview);
+        }
+        // Refresh notes to trigger NoteBubble to re-fetch images
+        await fetchNotes(selectedNotebookId);
       }
 
       editor.commands.clearContent();

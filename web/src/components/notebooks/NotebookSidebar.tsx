@@ -4,7 +4,12 @@ import { useStore } from '../../store';
 import { SearchPanel } from '../common/SearchPanel';
 import { TagsPanel } from '../common/TagsPanel';
 
-export function NotebookSidebar() {
+interface NotebookSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function NotebookSidebar({ isOpen, onClose }: NotebookSidebarProps) {
   const [newTitle, setNewTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -41,7 +46,7 @@ export function NotebookSidebar() {
       const notebook = await addNotebook(newTitle.trim());
       setNewTitle('');
       setIsAdding(false);
-      selectNotebook(notebook.id);
+      handleSelectNotebook(notebook.id);
     } catch (error) {
       console.error('Failed to add notebook:', error);
     }
@@ -54,9 +59,14 @@ export function NotebookSidebar() {
     }
   };
 
+  const handleSelectNotebook = (id: string) => {
+    selectNotebook(id);
+    onClose(); // Close sidebar on mobile after selecting
+  };
+
   return (
     <>
-      <aside className="sidebar">
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h2>Noted</h2>
           <button className="icon-btn" onClick={() => setIsAdding(true)} title="New notebook">
@@ -101,13 +111,13 @@ export function NotebookSidebar() {
             <div
               key={notebook.id}
               className={`notebook-item ${selectedNotebookId === notebook.id ? 'active' : ''}`}
-              onClick={() => selectNotebook(notebook.id)}
+              onClick={() => handleSelectNotebook(notebook.id)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  selectNotebook(notebook.id);
+                  handleSelectNotebook(notebook.id);
                 }
               }}
             >
