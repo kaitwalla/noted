@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: noted-postgres
+    environment:
+      POSTGRES_USER: noted
+      POSTGRES_PASSWORD: noted_dev_password
+      POSTGRES_DB: noted
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U noted -d noted"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: noted-postgres-test
+    environment:
+      POSTGRES_USER: noted_test
+      POSTGRES_PASSWORD: noted_test_password
+      POSTGRES_DB: noted_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    profiles:
+      - test
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: noted-server
+    ports:
+      - "8081:8080"
+    environment:
+      DATABASE_URL: postgres://noted:noted_dev_password@postgres:5432/noted?sslmode=disable
+      JWT_SECRET: dev-secret-change-in-prod-32chars!
+      PORT: 8080
+      ALLOWED_ORIGINS: http://localhost:5175,http://localhost:5173,http://localhost:3000
+      STORAGE_BASE_URL: http://localhost:8081/api/images
+    volumes:
+      - ./server:/app
+      - /app/tmp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    container_name: noted-web
+    ports:
+      - "5175:5173"
+    environment:
+      VITE_API_URL: http://localhost:8081/api
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
