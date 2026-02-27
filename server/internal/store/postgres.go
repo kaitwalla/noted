@@ -124,11 +124,11 @@ func (s *PostgresStore) UpdateUser(ctx context.Context, user *models.User) error
 
 func (s *PostgresStore) CreateNotebook(ctx context.Context, notebook *models.Notebook) error {
 	query := `
-		INSERT INTO notebooks (id, user_id, title, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO notebooks (id, user_id, title, sort_order, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 	_, err := s.pool.Exec(ctx, query,
-		notebook.ID, notebook.UserID, notebook.Title, notebook.CreatedAt, notebook.UpdatedAt)
+		notebook.ID, notebook.UserID, notebook.Title, notebook.SortOrder, notebook.CreatedAt, notebook.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create notebook: %w", err)
 	}
@@ -137,13 +137,13 @@ func (s *PostgresStore) CreateNotebook(ctx context.Context, notebook *models.Not
 
 func (s *PostgresStore) GetNotebookByID(ctx context.Context, id uuid.UUID) (*models.Notebook, error) {
 	query := `
-		SELECT id, user_id, title, created_at, updated_at, deleted_at
+		SELECT id, user_id, title, sort_order, created_at, updated_at, deleted_at
 		FROM notebooks
 		WHERE id = $1
 	`
 	var notebook models.Notebook
 	err := s.pool.QueryRow(ctx, query, id).Scan(
-		&notebook.ID, &notebook.UserID, &notebook.Title,
+		&notebook.ID, &notebook.UserID, &notebook.Title, &notebook.SortOrder,
 		&notebook.CreatedAt, &notebook.UpdatedAt, &notebook.DeletedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -156,10 +156,10 @@ func (s *PostgresStore) GetNotebookByID(ctx context.Context, id uuid.UUID) (*mod
 
 func (s *PostgresStore) GetNotebooksByUserID(ctx context.Context, userID uuid.UUID) ([]models.Notebook, error) {
 	query := `
-		SELECT id, user_id, title, created_at, updated_at, deleted_at
+		SELECT id, user_id, title, sort_order, created_at, updated_at, deleted_at
 		FROM notebooks
 		WHERE user_id = $1 AND deleted_at IS NULL
-		ORDER BY created_at DESC
+		ORDER BY sort_order ASC, created_at ASC
 	`
 	rows, err := s.pool.Query(ctx, query, userID)
 	if err != nil {
@@ -170,7 +170,7 @@ func (s *PostgresStore) GetNotebooksByUserID(ctx context.Context, userID uuid.UU
 	var notebooks []models.Notebook
 	for rows.Next() {
 		var nb models.Notebook
-		if err := rows.Scan(&nb.ID, &nb.UserID, &nb.Title, &nb.CreatedAt, &nb.UpdatedAt, &nb.DeletedAt); err != nil {
+		if err := rows.Scan(&nb.ID, &nb.UserID, &nb.Title, &nb.SortOrder, &nb.CreatedAt, &nb.UpdatedAt, &nb.DeletedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan notebook: %w", err)
 		}
 		notebooks = append(notebooks, nb)
@@ -184,10 +184,10 @@ func (s *PostgresStore) GetNotebooksByUserID(ctx context.Context, userID uuid.UU
 func (s *PostgresStore) UpdateNotebook(ctx context.Context, notebook *models.Notebook) error {
 	query := `
 		UPDATE notebooks
-		SET title = $2, updated_at = $3
+		SET title = $2, sort_order = $3, updated_at = $4
 		WHERE id = $1 AND deleted_at IS NULL
 	`
-	result, err := s.pool.Exec(ctx, query, notebook.ID, notebook.Title, notebook.UpdatedAt)
+	result, err := s.pool.Exec(ctx, query, notebook.ID, notebook.Title, notebook.SortOrder, notebook.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to update notebook: %w", err)
 	}
@@ -209,9 +209,23 @@ func (s *PostgresStore) DeleteNotebook(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
+func (s *PostgresStore) GetNextNotebookSortOrder(ctx context.Context, userID uuid.UUID) (int, error) {
+	query := `
+		SELECT COALESCE(MAX(sort_order), -1) + 1
+		FROM notebooks
+		WHERE user_id = $1 AND deleted_at IS NULL
+	`
+	var sortOrder int
+	err := s.pool.QueryRow(ctx, query, userID).Scan(&sortOrder)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get next sort order: %w", err)
+	}
+	return sortOrder, nil
+}
+
 func (s *PostgresStore) GetNotebooksSince(ctx context.Context, userID uuid.UUID, since time.Time) ([]models.Notebook, error) {
 	query := `
-		SELECT id, user_id, title, created_at, updated_at, deleted_at
+		SELECT id, user_id, title, sort_order, created_at, updated_at, deleted_at
 		FROM notebooks
 		WHERE user_id = $1 AND updated_at > $2
 		ORDER BY updated_at ASC
@@ -225,7 +239,7 @@ func (s *PostgresStore) GetNotebooksSince(ctx context.Context, userID uuid.UUID,
 	var notebooks []models.Notebook
 	for rows.Next() {
 		var nb models.Notebook
-		if err := rows.Scan(&nb.ID, &nb.UserID, &nb.Title, &nb.CreatedAt, &nb.UpdatedAt, &nb.DeletedAt); err != nil {
+		if err := rows.Scan(&nb.ID, &nb.UserID, &nb.Title, &nb.SortOrder, &nb.CreatedAt, &nb.UpdatedAt, &nb.DeletedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan notebook: %w", err)
 		}
 		notebooks = append(notebooks, nb)

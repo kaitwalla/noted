@@ -18,13 +18,14 @@ func setupTestServerWithNotebook(t *testing.T) (*api.Server, string, string) {
 	t.Helper()
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	// Register and get token
 	regBody, _ := json.Marshal(map[string]string{"email": "test@example.com", "password": "password123"})

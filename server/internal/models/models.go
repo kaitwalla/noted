@@ -22,6 +22,7 @@ type Notebook struct {
 	ID        uuid.UUID  `json:"id"`
 	UserID    uuid.UUID  `json:"user_id"`
 	Title     string     `json:"title"`
+	SortOrder int        `json:"sort_order"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
@@ -98,7 +99,8 @@ type CreateNotebookRequest struct {
 
 // UpdateNotebookRequest represents a request to update a notebook
 type UpdateNotebookRequest struct {
-	Title string `json:"title"`
+	Title     string `json:"title"`
+	SortOrder *int   `json:"sort_order,omitempty"`
 }
 
 // CreateNoteRequest represents a request to create a note

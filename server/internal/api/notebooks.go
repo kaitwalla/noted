@@ -49,11 +49,19 @@ func (s *Server) handleCreateNotebook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get the next sort order for the user's notebooks
+	sortOrder, err := s.store.GetNextNotebookSortOrder(r.Context(), userID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "server_error", "failed to get sort order")
+		return
+	}
+
 	now := time.Now()
 	notebook := &models.Notebook{
 		ID:        uuid.New(),
 		UserID:    userID,
 		Title:     req.Title,
+		SortOrder: sortOrder,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -140,6 +148,9 @@ func (s *Server) handleUpdateNotebook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	notebook.Title = req.Title
+	if req.SortOrder != nil {
+		notebook.SortOrder = *req.SortOrder
+	}
 	notebook.UpdatedAt = time.Now()
 
 	if err := s.store.UpdateNotebook(r.Context(), notebook); err != nil {

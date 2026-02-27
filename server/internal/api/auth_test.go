@@ -17,13 +17,14 @@ import (
 func TestAuthRegister(t *testing.T) {
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	tests := []struct {
 		name       string
@@ -87,13 +88,14 @@ func TestAuthRegister(t *testing.T) {
 func TestAuthLogin(t *testing.T) {
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	// Register a user first
 	regBody, _ := json.Marshal(map[string]string{"email": "login@example.com", "password": "password123"})
@@ -147,13 +149,14 @@ func TestAuthLogin(t *testing.T) {
 func TestAuthRefresh(t *testing.T) {
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	// Register a user
 	regBody, _ := json.Marshal(map[string]string{"email": "refresh@example.com", "password": "password123"})
@@ -196,13 +199,14 @@ func TestAuthRefresh(t *testing.T) {
 func TestAuthMe(t *testing.T) {
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	// Register a user
 	regBody, _ := json.Marshal(map[string]string{"email": "me@example.com", "password": "password123"})
@@ -244,13 +248,14 @@ func TestAuthMe(t *testing.T) {
 func TestAuthMiddleware(t *testing.T) {
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	tests := []struct {
 		name       string

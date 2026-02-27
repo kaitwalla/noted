@@ -14,6 +14,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/noted/server/internal/api"
 	"github.com/noted/server/internal/config"
+	"github.com/noted/server/internal/storage"
 	"github.com/noted/server/internal/store"
 	"github.com/noted/server/migrations"
 	"github.com/pressly/goose/v3"
@@ -36,8 +37,29 @@ func main() {
 	}
 	defer pgStore.Close()
 
+	// Initialize blob storage
+	blobStore, err := storage.New(storage.Config{
+		Backend:       storage.Backend(cfg.StorageBackend),
+		LocalPath:     cfg.ImageStoragePath,
+		SigningSecret: cfg.StorageSigningSecret,
+		BaseURL:       cfg.StorageBaseURL,
+
+		// S3 config
+		S3Bucket:          cfg.S3Bucket,
+		S3Region:          cfg.S3Region,
+		S3Endpoint:        cfg.S3Endpoint,
+		S3AccessKeyID:     cfg.S3AccessKeyID,
+		S3SecretAccessKey: cfg.S3SecretAccessKey,
+		S3UsePathStyle:    cfg.S3UsePathStyle,
+		S3PublicURL:       cfg.S3PublicURL,
+	})
+	if err != nil {
+		log.Fatalf("Failed to initialize blob storage: %v", err)
+	}
+	defer blobStore.Close()
+
 	// Create server
-	srv := api.NewServer(pgStore, cfg)
+	srv := api.NewServer(pgStore, cfg, blobStore)
 
 	// Start HTTP server
 	httpServer := &http.Server{

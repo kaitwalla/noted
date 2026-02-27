@@ -34,6 +34,7 @@ type NotebookStore interface {
 	UpdateNotebook(ctx context.Context, notebook *models.Notebook) error
 	DeleteNotebook(ctx context.Context, id uuid.UUID) error
 	GetNotebooksSince(ctx context.Context, userID uuid.UUID, since time.Time) ([]models.Notebook, error)
+	GetNextNotebookSortOrder(ctx context.Context, userID uuid.UUID) (int, error)
 }
 
 // NoteStore handles note data operations

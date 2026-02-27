@@ -7,22 +7,25 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/noted/server/internal/config"
+	"github.com/noted/server/internal/storage"
 	"github.com/noted/server/internal/store"
 )
 
 // Server holds all dependencies for the HTTP server
 type Server struct {
-	router *chi.Mux
-	store  store.Store
-	config *config.Config
+	router    *chi.Mux
+	store     store.Store
+	config    *config.Config
+	blobStore storage.BlobStore
 }
 
 // NewServer creates a new API server
-func NewServer(s store.Store, cfg *config.Config) *Server {
+func NewServer(s store.Store, cfg *config.Config, blobStore storage.BlobStore) *Server {
 	srv := &Server{
-		router: chi.NewRouter(),
-		store:  s,
-		config: cfg,
+		router:    chi.NewRouter(),
+		store:     s,
+		config:    cfg,
+		blobStore: blobStore,
 	}
 	srv.setupRoutes()
 	return srv
@@ -57,6 +60,9 @@ func (s *Server) setupRoutes() {
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {
+		// Public image access (supports signed URLs OR JWT auth)
+		r.Get("/images/{id}", s.handleGetImage)
+
 		// Auth routes (public)
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/register", s.handleRegister)
@@ -103,11 +109,14 @@ func (s *Server) setupRoutes() {
 				r.Delete("/{id}", s.handleDeleteTag)
 			})
 
-			// Images
+			// Images (upload and URL refresh require auth)
 			r.Route("/images", func(r chi.Router) {
 				r.Post("/", s.handleUploadImage)
-				r.Get("/{id}", s.handleGetImage)
+				r.Get("/{id}/url", s.handleGetImageURL)
 			})
+
+			// Note images
+			r.Get("/notes/{noteId}/images", s.handleListNoteImages)
 
 			// Search
 			r.Get("/search", s.handleSearch)
