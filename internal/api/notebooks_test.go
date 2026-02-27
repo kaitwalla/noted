@@ -19,13 +19,14 @@ func setupTestServer(t *testing.T) (*api.Server, string) {
 	t.Helper()
 	db := testutil.TestDB(t)
 	testutil.CleanTables(t, db)
+	blobStore := testutil.TestBlobStore(t)
 
 	cfg := &config.Config{
 		JWTSecret:      "test-secret",
 		JWTExpiration:  15 * time.Minute,
 		RefreshExpiry:  7 * 24 * time.Hour,
 	}
-	srv := api.NewServer(db, cfg)
+	srv := api.NewServer(db, cfg, blobStore)
 
 	// Register and get token
 	regBody, _ := json.Marshal(map[string]string{"email": "test@example.com", "password": "password123"})
@@ -70,7 +71,7 @@ func TestNotebooksCRUD(t *testing.T) {
 		}
 	})
 
-	// List notebooks
+	// List notebooks (includes default "Main" notebook created on registration)
 	t.Run("list notebooks", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/notebooks", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -84,8 +85,9 @@ func TestNotebooksCRUD(t *testing.T) {
 
 		var notebooks []models.Notebook
 		json.NewDecoder(rec.Body).Decode(&notebooks)
-		if len(notebooks) != 1 {
-			t.Errorf("got %d notebooks, want 1", len(notebooks))
+		// Expect 2 notebooks: default "Main" + "My Notebook"
+		if len(notebooks) != 2 {
+			t.Errorf("got %d notebooks, want 2", len(notebooks))
 		}
 	})
 
@@ -232,8 +234,8 @@ func TestNotebookAuthorization(t *testing.T) {
 		}
 	})
 
-	// Verify user 2 has empty notebook list
-	t.Run("user2 has no notebooks", func(t *testing.T) {
+	// Verify user 2 only has default notebook (not user 1's notebooks)
+	t.Run("user2 has only default notebook", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/notebooks", nil)
 		req.Header.Set("Authorization", "Bearer "+token2)
 		rec := httptest.NewRecorder()
@@ -242,8 +244,12 @@ func TestNotebookAuthorization(t *testing.T) {
 
 		var notebooks []models.Notebook
 		json.NewDecoder(rec.Body).Decode(&notebooks)
-		if len(notebooks) != 0 {
-			t.Errorf("got %d notebooks, want 0", len(notebooks))
+		// User 2 should only have the default "Main" notebook created on registration
+		if len(notebooks) != 1 {
+			t.Errorf("got %d notebooks, want 1", len(notebooks))
+		}
+		if len(notebooks) > 0 && notebooks[0].Title != "Main" {
+			t.Errorf("got title %s, want Main", notebooks[0].Title)
 		}
 	})
 }

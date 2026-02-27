@@ -60,6 +60,21 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create default "Main" notebook for new user
+	defaultNotebook := &models.Notebook{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		Title:     "Main",
+		SortOrder: 0,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	if err := s.store.CreateNotebook(r.Context(), defaultNotebook); err != nil {
+		// Log the error but don't fail registration - user can create notebooks manually
+		// In production, consider using a transaction to ensure atomicity
+		fmt.Printf("Warning: failed to create default notebook for user %s: %v\n", user.ID, err)
+	}
+
 	tokens, err := s.generateTokens(user.ID)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "server_error", "failed to generate tokens")
@@ -228,4 +243,31 @@ func (s *Server) generateTokens(userID uuid.UUID) (*tokenPair, error) {
 		AccessToken:  accessTokenString,
 		RefreshToken: refreshTokenString,
 	}, nil
+}
+
+// validateToken validates an access token and returns the user ID
+func (s *Server) validateToken(tokenString string) (uuid.UUID, error) {
+	claims := &Claims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.config.JWTSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		return uuid.Nil, fmt.Errorf("invalid token")
+	}
+
+	if claims.TokenType != "access" {
+		return uuid.Nil, fmt.Errorf("invalid token type")
+	}
+
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid user ID in token")
+	}
+
+	return userID, nil
 }

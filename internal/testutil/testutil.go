@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/noted/server/internal/storage"
 	"github.com/noted/server/internal/store"
 	"github.com/noted/server/migrations"
 	"github.com/pressly/goose/v3"
@@ -68,4 +69,30 @@ func CleanTables(t *testing.T, db *store.PostgresStore) {
 			t.Fatalf("Failed to truncate table %s: %v", table, err)
 		}
 	}
+}
+
+// TestBlobStore returns a local blob store for testing using a temp directory
+func TestBlobStore(t *testing.T) storage.BlobStore {
+	t.Helper()
+
+	tempDir, err := os.MkdirTemp("", "noted-test-uploads-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp directory: %v", err)
+	}
+
+	blobStore, err := storage.NewLocalStore(storage.LocalStoreConfig{
+		BasePath:      tempDir,
+		SigningSecret: "test-signing-secret-32-chars-long",
+		BaseURL:       "/api/images",
+	})
+	if err != nil {
+		t.Fatalf("Failed to create blob store: %v", err)
+	}
+
+	t.Cleanup(func() {
+		blobStore.Close()
+		os.RemoveAll(tempDir)
+	})
+
+	return blobStore
 }
