@@ -5,22 +5,60 @@ final class KeychainService {
     static let shared = KeychainService()
 
     private let service = "com.noted.app"
-    private let tokenKey = "auth_token"
+    private let accessTokenKey = "access_token"
+    private let refreshTokenKey = "refresh_token"
 
     private init() {}
 
-    func saveToken(_ token: String) throws {
-        guard let data = token.data(using: .utf8) else {
+    // MARK: - Access Token
+
+    func saveAccessToken(_ token: String) throws {
+        try save(token, forKey: accessTokenKey)
+    }
+
+    func getAccessToken() -> String? {
+        get(forKey: accessTokenKey)
+    }
+
+    func deleteAccessToken() throws {
+        try delete(forKey: accessTokenKey)
+    }
+
+    // MARK: - Refresh Token
+
+    func saveRefreshToken(_ token: String) throws {
+        try save(token, forKey: refreshTokenKey)
+    }
+
+    func getRefreshToken() -> String? {
+        get(forKey: refreshTokenKey)
+    }
+
+    func deleteRefreshToken() throws {
+        try delete(forKey: refreshTokenKey)
+    }
+
+    // MARK: - Clear All
+
+    func deleteAllTokens() throws {
+        try? deleteAccessToken()
+        try? deleteRefreshToken()
+    }
+
+    // MARK: - Private Helpers
+
+    private func save(_ value: String, forKey key: String) throws {
+        guard let data = value.data(using: .utf8) else {
             throw KeychainError.encodingFailed
         }
 
-        // Delete existing token first
-        try? deleteToken()
+        // Delete existing value first
+        try? delete(forKey: key)
 
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: tokenKey,
+            kSecAttrAccount as String: key,
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
@@ -31,11 +69,11 @@ final class KeychainService {
         }
     }
 
-    func getToken() -> String? {
+    private func get(forKey key: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: tokenKey,
+            kSecAttrAccount as String: key,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne
         ]
@@ -45,18 +83,18 @@ final class KeychainService {
 
         guard status == errSecSuccess,
               let data = result as? Data,
-              let token = String(data: data, encoding: .utf8) else {
+              let value = String(data: data, encoding: .utf8) else {
             return nil
         }
 
-        return token
+        return value
     }
 
-    func deleteToken() throws {
+    private func delete(forKey key: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: tokenKey
+            kSecAttrAccount as String: key
         ]
 
         let status = SecItemDelete(query as CFDictionary)

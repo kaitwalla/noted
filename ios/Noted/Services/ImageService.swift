@@ -31,8 +31,11 @@ actor ImageService {
     // MARK: - Upload
 
     func uploadImage(_ image: UIImage, noteId: UUID) async throws -> NoteImage {
+        // Refresh token if needed before upload
+        try? await api.refreshAccessTokenIfNeeded()
+
         // Critical: Check authentication before upload
-        guard let token = api.authToken else {
+        guard let token = api.accessToken else {
             throw ImageError.unauthorized
         }
 
@@ -106,11 +109,14 @@ actor ImageService {
             return fileImage
         }
 
+        // Refresh token if needed before download
+        try? await api.refreshAccessTokenIfNeeded()
+
         // Download from server
         let url = baseURL.appendingPathComponent("images/\(id.uuidString)")
 
         var request = URLRequest(url: url)
-        if let token = api.authToken {
+        if let token = api.accessToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
