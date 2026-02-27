@@ -1,0 +1,673 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A1000001001 /* NotedApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000001000 /* NotedApp.swift */; };
+		A1000002001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000 /* ContentView.swift */; };
+		A1000003001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000003000 /* Assets.xcassets */; };
+		A1000004001 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000 /* User.swift */; };
+		A1000005001 /* Notebook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000005000 /* Notebook.swift */; };
+		A1000006001 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000 /* Note.swift */; };
+		A1000007001 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000007000 /* APIError.swift */; };
+		A1000008001 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008000 /* KeychainService.swift */; };
+		A1000009001 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000009000 /* APIService.swift */; };
+		A1000010001 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010000 /* AuthService.swift */; };
+		A1000011001 /* NotebooksService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000011000 /* NotebooksService.swift */; };
+		A1000012001 /* NotesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000 /* NotesService.swift */; };
+		A1000013001 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000013000 /* AuthViewModel.swift */; };
+		A1000014001 /* NotebooksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000014000 /* NotebooksViewModel.swift */; };
+		A1000015001 /* NotesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000015000 /* NotesViewModel.swift */; };
+		A1000016001 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000016000 /* LoginView.swift */; };
+		A1000017001 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000017000 /* RegisterView.swift */; };
+		A1000018001 /* NotebookListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000018000 /* NotebookListView.swift */; };
+		A1000019001 /* NotebookRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000019000 /* NotebookRow.swift */; };
+		A1000020001 /* NoteTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000020000 /* NoteTimelineView.swift */; };
+		A1000021001 /* NoteBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000021000 /* NoteBubble.swift */; };
+		A1000022001 /* NoteInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000022000 /* NoteInputView.swift */; };
+		A1000023001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000023000 /* SettingsView.swift */; };
+		A1000024001 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000024000 /* MainTabView.swift */; };
+		A1000026001 /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000026000 /* CoreDataStack.swift */; };
+		A1000027002 /* Noted.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A1000027000 /* Noted.xcdatamodeld */; };
+		A1000028001 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000028000 /* SyncService.swift */; };
+		A1000029001 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000029000 /* NetworkMonitor.swift */; };
+		A1000030001 /* LocalDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000030000 /* LocalDataService.swift */; };
+		A1000031001 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000031000 /* SyncModels.swift */; };
+		A1000032001 /* SyncStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000 /* SyncStatusView.swift */; };
+		A1000033001 /* Tag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000033000 /* Tag.swift */; };
+		A1000034001 /* TagsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000034000 /* TagsService.swift */; };
+		A1000035001 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000035000 /* NotificationService.swift */; };
+		A1000036001 /* TagsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000036000 /* TagsViewModel.swift */; };
+		A1000037001 /* TodosViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000037000 /* TodosViewModel.swift */; };
+		A1000038001 /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000038000 /* SearchViewModel.swift */; };
+		A1000039001 /* RemindersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000039000 /* RemindersViewModel.swift */; };
+		A1000040001 /* TagChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000040000 /* TagChip.swift */; };
+		A1000041001 /* TagPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000041000 /* TagPicker.swift */; };
+		A1000042001 /* TodosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000042000 /* TodosView.swift */; };
+		A1000043001 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000043000 /* SearchView.swift */; };
+		A1000044001 /* ReminderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000044000 /* ReminderPicker.swift */; };
+		A1000045001 /* RemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000045000 /* RemindersView.swift */; };
+		A1000046001 /* Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000046000 /* Image.swift */; };
+		A1000047001 /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000047000 /* ImageService.swift */; };
+		A1000048001 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000048000 /* ImagePicker.swift */; };
+		A1000049001 /* ImageViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000049000 /* ImageViewer.swift */; };
+		A1000050001 /* AsyncNoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000050000 /* AsyncNoteImage.swift */; };
+		A1000051001 /* ImagesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000051000 /* ImagesViewModel.swift */; };
+		A1000052001 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000052000 /* HapticService.swift */; };
+		A1000053001 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000053000 /* EmptyStateView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A1000000000 /* Noted.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Noted.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000001000 /* NotedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotedApp.swift; sourceTree = "<group>"; };
+		A1000002000 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A1000003000 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1000004000 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		A1000005000 /* Notebook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notebook.swift; sourceTree = "<group>"; };
+		A1000006000 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
+		A1000007000 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIError.swift; sourceTree = "<group>"; };
+		A1000008000 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		A1000009000 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		A1000010000 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		A1000011000 /* NotebooksService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebooksService.swift; sourceTree = "<group>"; };
+		A1000012000 /* NotesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesService.swift; sourceTree = "<group>"; };
+		A1000013000 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		A1000014000 /* NotebooksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebooksViewModel.swift; sourceTree = "<group>"; };
+		A1000015000 /* NotesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesViewModel.swift; sourceTree = "<group>"; };
+		A1000016000 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A1000017000 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
+		A1000018000 /* NotebookListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookListView.swift; sourceTree = "<group>"; };
+		A1000019000 /* NotebookRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotebookRow.swift; sourceTree = "<group>"; };
+		A1000020000 /* NoteTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteTimelineView.swift; sourceTree = "<group>"; };
+		A1000021000 /* NoteBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteBubble.swift; sourceTree = "<group>"; };
+		A1000022000 /* NoteInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteInputView.swift; sourceTree = "<group>"; };
+		A1000023000 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1000024000 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		A1000025000 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1000026000 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
+		A1000028000 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		A1000029000 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		A1000030000 /* LocalDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDataService.swift; sourceTree = "<group>"; };
+		A1000031000 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
+		A1000032000 /* SyncStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusView.swift; sourceTree = "<group>"; };
+		A1000033000 /* Tag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tag.swift; sourceTree = "<group>"; };
+		A1000034000 /* TagsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsService.swift; sourceTree = "<group>"; };
+		A1000035000 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		A1000036000 /* TagsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagsViewModel.swift; sourceTree = "<group>"; };
+		A1000037000 /* TodosViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosViewModel.swift; sourceTree = "<group>"; };
+		A1000038000 /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		A1000039000 /* RemindersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersViewModel.swift; sourceTree = "<group>"; };
+		A1000040000 /* TagChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagChip.swift; sourceTree = "<group>"; };
+		A1000041000 /* TagPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPicker.swift; sourceTree = "<group>"; };
+		A1000042000 /* TodosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodosView.swift; sourceTree = "<group>"; };
+		A1000043000 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		A1000044000 /* ReminderPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderPicker.swift; sourceTree = "<group>"; };
+		A1000045000 /* RemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
+		A1000046000 /* Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Image.swift; sourceTree = "<group>"; };
+		A1000047000 /* ImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageService.swift; sourceTree = "<group>"; };
+		A1000048000 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
+		A1000049000 /* ImageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageViewer.swift; sourceTree = "<group>"; };
+		A1000050000 /* AsyncNoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncNoteImage.swift; sourceTree = "<group>"; };
+		A1000051000 /* ImagesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagesViewModel.swift; sourceTree = "<group>"; };
+		A1000052000 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		A1000053000 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1000000010 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A1000000020 = {
+			isa = PBXGroup;
+			children = (
+				A1000000030 /* Noted */,
+				A1000000040 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A1000000030 /* Noted */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000050 /* App */,
+				A10000000E0 /* CoreData */,
+				A1000000060 /* Models */,
+				A1000000070 /* Services */,
+				A1000000080 /* ViewModels */,
+				A1000000090 /* Views */,
+				A1000003000 /* Assets.xcassets */,
+				A1000025000 /* Info.plist */,
+			);
+			path = Noted;
+			sourceTree = "<group>";
+		};
+		A1000000040 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000 /* Noted.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1000000050 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A1000001000 /* NotedApp.swift */,
+				A1000002000 /* ContentView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A1000000060 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A1000004000 /* User.swift */,
+				A1000005000 /* Notebook.swift */,
+				A1000006000 /* Note.swift */,
+				A1000007000 /* APIError.swift */,
+				A1000031000 /* SyncModels.swift */,
+				A1000033000 /* Tag.swift */,
+				A1000046000 /* Image.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A1000000070 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A1000008000 /* KeychainService.swift */,
+				A1000009000 /* APIService.swift */,
+				A1000010000 /* AuthService.swift */,
+				A1000011000 /* NotebooksService.swift */,
+				A1000012000 /* NotesService.swift */,
+				A1000028000 /* SyncService.swift */,
+				A1000029000 /* NetworkMonitor.swift */,
+				A1000030000 /* LocalDataService.swift */,
+				A1000034000 /* TagsService.swift */,
+				A1000035000 /* NotificationService.swift */,
+				A1000047000 /* ImageService.swift */,
+				A1000052000 /* HapticService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A1000000080 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A1000013000 /* AuthViewModel.swift */,
+				A1000014000 /* NotebooksViewModel.swift */,
+				A1000015000 /* NotesViewModel.swift */,
+				A1000036000 /* TagsViewModel.swift */,
+				A1000037000 /* TodosViewModel.swift */,
+				A1000038000 /* SearchViewModel.swift */,
+				A1000039000 /* RemindersViewModel.swift */,
+				A1000051000 /* ImagesViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		A1000000090 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000A0 /* Auth */,
+				A10000000F0 /* Common */,
+				A10000000B0 /* Notebooks */,
+				A10000000C0 /* Notes */,
+				A10000000G0 /* Tags */,
+				A10000000H0 /* Todos */,
+				A10000000I0 /* Search */,
+				A10000000J0 /* Reminders */,
+				A10000000D0 /* Settings */,
+				A1000024000 /* MainTabView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A10000000A0 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A1000016000 /* LoginView.swift */,
+				A1000017000 /* RegisterView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A10000000B0 /* Notebooks */ = {
+			isa = PBXGroup;
+			children = (
+				A1000018000 /* NotebookListView.swift */,
+				A1000019000 /* NotebookRow.swift */,
+			);
+			path = Notebooks;
+			sourceTree = "<group>";
+		};
+		A10000000C0 /* Notes */ = {
+			isa = PBXGroup;
+			children = (
+				A1000020000 /* NoteTimelineView.swift */,
+				A1000021000 /* NoteBubble.swift */,
+				A1000022000 /* NoteInputView.swift */,
+			);
+			path = Notes;
+			sourceTree = "<group>";
+		};
+		A10000000D0 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A1000023000 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A10000000E0 /* CoreData */ = {
+			isa = PBXGroup;
+			children = (
+				A1000026000 /* CoreDataStack.swift */,
+				A1000027000 /* Noted.xcdatamodeld */,
+			);
+			path = CoreData;
+			sourceTree = "<group>";
+		};
+		A10000000F0 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				A1000032000 /* SyncStatusView.swift */,
+				A1000048000 /* ImagePicker.swift */,
+				A1000049000 /* ImageViewer.swift */,
+				A1000050000 /* AsyncNoteImage.swift */,
+				A1000053000 /* EmptyStateView.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		A10000000G0 /* Tags */ = {
+			isa = PBXGroup;
+			children = (
+				A1000040000 /* TagChip.swift */,
+				A1000041000 /* TagPicker.swift */,
+			);
+			path = Tags;
+			sourceTree = "<group>";
+		};
+		A10000000H0 /* Todos */ = {
+			isa = PBXGroup;
+			children = (
+				A1000042000 /* TodosView.swift */,
+			);
+			path = Todos;
+			sourceTree = "<group>";
+		};
+		A10000000I0 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				A1000043000 /* SearchView.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		A10000000J0 /* Reminders */ = {
+			isa = PBXGroup;
+			children = (
+				A1000044000 /* ReminderPicker.swift */,
+				A1000045000 /* RemindersView.swift */,
+			);
+			path = Reminders;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1000000100 /* Noted */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1000000110 /* Build configuration list for PBXNativeTarget "Noted" */;
+			buildPhases = (
+				A1000000120 /* Sources */,
+				A1000000010 /* Frameworks */,
+				A1000000130 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Noted;
+			productName = Noted;
+			productReference = A1000000000 /* Noted.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A1000000140 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A1000000100 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A1000000150 /* Build configuration list for PBXProject "Noted" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A1000000020;
+			productRefGroup = A1000000040 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1000000100 /* Noted */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A1000000130 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000003001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A1000000120 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000001001 /* NotedApp.swift in Sources */,
+				A1000002001 /* ContentView.swift in Sources */,
+				A1000004001 /* User.swift in Sources */,
+				A1000005001 /* Notebook.swift in Sources */,
+				A1000006001 /* Note.swift in Sources */,
+				A1000007001 /* APIError.swift in Sources */,
+				A1000031001 /* SyncModels.swift in Sources */,
+				A1000033001 /* Tag.swift in Sources */,
+				A1000008001 /* KeychainService.swift in Sources */,
+				A1000009001 /* APIService.swift in Sources */,
+				A1000010001 /* AuthService.swift in Sources */,
+				A1000011001 /* NotebooksService.swift in Sources */,
+				A1000012001 /* NotesService.swift in Sources */,
+				A1000028001 /* SyncService.swift in Sources */,
+				A1000029001 /* NetworkMonitor.swift in Sources */,
+				A1000030001 /* LocalDataService.swift in Sources */,
+				A1000034001 /* TagsService.swift in Sources */,
+				A1000035001 /* NotificationService.swift in Sources */,
+				A1000026001 /* CoreDataStack.swift in Sources */,
+				A1000027002 /* Noted.xcdatamodeld in Sources */,
+				A1000013001 /* AuthViewModel.swift in Sources */,
+				A1000014001 /* NotebooksViewModel.swift in Sources */,
+				A1000015001 /* NotesViewModel.swift in Sources */,
+				A1000036001 /* TagsViewModel.swift in Sources */,
+				A1000037001 /* TodosViewModel.swift in Sources */,
+				A1000038001 /* SearchViewModel.swift in Sources */,
+				A1000039001 /* RemindersViewModel.swift in Sources */,
+				A1000016001 /* LoginView.swift in Sources */,
+				A1000017001 /* RegisterView.swift in Sources */,
+				A1000018001 /* NotebookListView.swift in Sources */,
+				A1000019001 /* NotebookRow.swift in Sources */,
+				A1000020001 /* NoteTimelineView.swift in Sources */,
+				A1000021001 /* NoteBubble.swift in Sources */,
+				A1000022001 /* NoteInputView.swift in Sources */,
+				A1000023001 /* SettingsView.swift in Sources */,
+				A1000024001 /* MainTabView.swift in Sources */,
+				A1000032001 /* SyncStatusView.swift in Sources */,
+				A1000040001 /* TagChip.swift in Sources */,
+				A1000041001 /* TagPicker.swift in Sources */,
+				A1000042001 /* TodosView.swift in Sources */,
+				A1000043001 /* SearchView.swift in Sources */,
+				A1000044001 /* ReminderPicker.swift in Sources */,
+				A1000045001 /* RemindersView.swift in Sources */,
+				A1000046001 /* Image.swift in Sources */,
+				A1000047001 /* ImageService.swift in Sources */,
+				A1000048001 /* ImagePicker.swift in Sources */,
+				A1000049001 /* ImageViewer.swift in Sources */,
+				A1000050001 /* AsyncNoteImage.swift in Sources */,
+				A1000051001 /* ImagesViewModel.swift in Sources */,
+				A1000052001 /* HapticService.swift in Sources */,
+				A1000053001 /* EmptyStateView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A1000000160 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A1000000170 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A1000000180 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Noted/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.noted.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A1000000190 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Noted/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.noted.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1000000110 /* Build configuration list for PBXNativeTarget "Noted" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000000180 /* Debug */,
+				A1000000190 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1000000150 /* Build configuration list for PBXProject "Noted" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1000000160 /* Debug */,
+				A1000000170 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		A1000027000 /* Noted.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				A1000027001 /* Noted.xcdatamodel */,
+			);
+			currentVersion = A1000027001 /* Noted.xcdatamodel */;
+			path = Noted.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+		A1000027001 /* Noted.xcdatamodel */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.xcdatamodel;
+			path = Noted.xcdatamodel;
+			sourceTree = "<group>";
+		};
+/* End XCVersionGroup section */
+	};
+	rootObject = A1000000140 /* Project object */;
+}
