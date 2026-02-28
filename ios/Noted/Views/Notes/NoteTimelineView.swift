@@ -9,7 +9,7 @@ struct NoteTimelineView: View {
     @State private var noteImageLoadOrder: [UUID] = [] // Track order for LRU eviction
     @State private var scrollToBottom = false
 
-    private let maxCachedNoteImages = 50 // Limit memory usage
+    private let maxCachedNoteImages = 30 // Limit memory usage (reduced from 50)
 
     // Cached date formatter to avoid recreating in render loops
     private static let sectionDateFormatter: DateFormatter = {
@@ -152,6 +152,11 @@ struct NoteTimelineView: View {
             await viewModel.fetchNotes()
             scrollToBottom = true
         }
+        .onDisappear {
+            // Clear image cache when leaving view to free memory
+            noteImages.removeAll()
+            noteImageLoadOrder.removeAll()
+        }
     }
 
     private func fetchImagesForNote(_ noteId: UUID) async {
@@ -160,13 +165,15 @@ struct NoteTimelineView: View {
         do {
             let images = try await ImageService.shared.fetchImages(noteId: noteId)
             await MainActor.run {
-                // LRU eviction: remove oldest entries if over limit
+                // LRU eviction: remove oldest entries if at or over limit
+                // Remove half of cache when full to reduce eviction frequency
                 if noteImages.count >= maxCachedNoteImages {
-                    let toRemove = noteImageLoadOrder.prefix(10)
+                    let removeCount = maxCachedNoteImages / 2
+                    let toRemove = noteImageLoadOrder.prefix(removeCount)
                     for id in toRemove {
                         noteImages.removeValue(forKey: id)
                     }
-                    noteImageLoadOrder.removeFirst(min(10, noteImageLoadOrder.count))
+                    noteImageLoadOrder.removeFirst(min(removeCount, noteImageLoadOrder.count))
                 }
 
                 noteImages[noteId] = images

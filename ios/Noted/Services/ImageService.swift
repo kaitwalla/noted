@@ -202,6 +202,15 @@ actor ImageService {
         try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
     }
 
+    /// Clears only the in-memory cache, preserving disk cache
+    nonisolated func clearMemoryCache() {
+        Task { await _clearMemoryCache() }
+    }
+
+    private func _clearMemoryCache() {
+        cache.removeAllObjects()
+    }
+
     // MARK: - Private
 
     private func saveToFileCacheAsync(_ image: UIImage, id: UUID) async {

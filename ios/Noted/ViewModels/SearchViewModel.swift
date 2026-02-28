@@ -11,6 +11,10 @@ final class SearchViewModel {
     private let localData = LocalDataService.shared
     private var searchTask: Task<Void, Never>?
 
+    deinit {
+        searchTask?.cancel()
+    }
+
     func loadNotebooks() {
         notebooks = localData.fetchNotebooks()
     }

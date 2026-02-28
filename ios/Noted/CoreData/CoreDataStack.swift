@@ -21,6 +21,13 @@ final class CoreDataStack {
 
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        // Auto-fault objects after 60 seconds to reduce memory usage
+        container.viewContext.stalenessInterval = 60
+    }
+
+    /// Refreshes all objects in the context to release memory from stale objects
+    func refreshContext() {
+        viewContext.refreshAllObjects()
     }
 
     func newBackgroundContext() -> NSManagedObjectContext {
