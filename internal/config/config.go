@@ -10,13 +10,14 @@ import (
 
 // Config holds application configuration
 type Config struct {
-	Port             string
-	DatabaseURL      string
-	JWTSecret        string
-	JWTExpiration    time.Duration
-	RefreshExpiry    time.Duration
-	ImageStoragePath string
-	AllowedOrigins   []string
+	Port                string
+	DatabaseURL         string
+	JWTSecret           string
+	JWTExpiration       time.Duration
+	RefreshExpiry       time.Duration
+	ImageStoragePath    string
+	AllowedOrigins      []string
+	DisableRegistration bool
 
 	// Storage backend configuration
 	StorageBackend       string        // "local" or "s3"
@@ -76,13 +77,14 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:             getEnv("PORT", "8080"),
-		DatabaseURL:      dbURL,
-		JWTSecret:        jwtSecret,
-		JWTExpiration:    getDuration("JWT_EXPIRATION", 15*time.Minute),
-		RefreshExpiry:    getDuration("REFRESH_EXPIRY", 7*24*time.Hour),
-		ImageStoragePath: getEnv("IMAGE_STORAGE_PATH", "./uploads"),
-		AllowedOrigins:   allowedOrigins,
+		Port:                getEnv("PORT", "8080"),
+		DatabaseURL:         dbURL,
+		JWTSecret:           jwtSecret,
+		JWTExpiration:       getDuration("JWT_EXPIRATION", 15*time.Minute),
+		RefreshExpiry:       getDuration("REFRESH_EXPIRY", 7*24*time.Hour),
+		ImageStoragePath:    getEnv("IMAGE_STORAGE_PATH", "./uploads"),
+		AllowedOrigins:      allowedOrigins,
+		DisableRegistration: getBool("DISABLE_REGISTRATION", false),
 
 		// Storage settings
 		StorageBackend:       storageBackend,
