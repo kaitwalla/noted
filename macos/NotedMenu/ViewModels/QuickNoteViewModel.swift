@@ -112,16 +112,40 @@ final class QuickNoteViewModel: ObservableObject {
         let scale = min(maxDimension / size.width, maxDimension / size.height)
         let newSize = NSSize(width: size.width * scale, height: size.height * scale)
 
-        let resized = NSImage(size: newSize)
-        resized.lockFocus()
-        NSGraphicsContext.current?.imageInterpolation = .high
-        image.draw(in: NSRect(origin: .zero, size: newSize),
-                   from: NSRect(origin: .zero, size: size),
-                   operation: .copy,
-                   fraction: 1.0)
-        resized.unlockFocus()
+        // Use NSBitmapImageRep for thread-safe resizing
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return originalData
+        }
 
-        if let data = imageToJpegData(resized) {
+        let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(newSize.width),
+            pixelsHigh: Int(newSize.height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        )
+
+        guard let bitmapRep = bitmapRep else {
+            return originalData
+        }
+
+        bitmapRep.size = newSize
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+        NSGraphicsContext.current?.imageInterpolation = .high
+
+        let destRect = NSRect(origin: .zero, size: newSize)
+        let sourceRect = NSRect(origin: .zero, size: size)
+        image.draw(in: destRect, from: sourceRect, operation: .copy, fraction: 1.0)
+
+        NSGraphicsContext.restoreGraphicsState()
+
+        if let data = bitmapRep.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) {
             return data
         }
         return originalData

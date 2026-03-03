@@ -209,7 +209,7 @@ struct QuickNoteView: View {
             if provider.hasItemConformingToTypeIdentifier("public.image") {
                 provider.loadObject(ofClass: NSImage.self) { image, _ in
                     if let nsImage = image as? NSImage {
-                        DispatchQueue.main.async {
+                        Task { @MainActor in
                             viewModel.addImages([nsImage])
                         }
                     }
@@ -217,10 +217,12 @@ struct QuickNoteView: View {
             } else if provider.hasItemConformingToTypeIdentifier("public.file-url") {
                 provider.loadItem(forTypeIdentifier: "public.file-url") { item, _ in
                     if let data = item as? Data,
-                       let url = URL(dataRepresentation: data, relativeTo: nil),
-                       let image = NSImage(contentsOf: url) {
-                        DispatchQueue.main.async {
-                            viewModel.addImages([image])
+                       let url = URL(dataRepresentation: data, relativeTo: nil) {
+                        // Load image on main thread
+                        Task { @MainActor in
+                            if let image = NSImage(contentsOf: url) {
+                                viewModel.addImages([image])
+                            }
                         }
                     }
                 }
