@@ -3,7 +3,7 @@ import UIKit
 
 struct NoteInputView: View {
     let onSend: (String) -> Void
-    var onImageSelected: ((UIImage) -> Void)?
+    var onImageSelected: ((UIImage, Bool) -> Void)?
 
     @State private var text = ""
     @FocusState private var isFocused: Bool
@@ -12,8 +12,8 @@ struct NoteInputView: View {
         HStack(alignment: .bottom, spacing: 12) {
             // Image picker button
             if let onImageSelected = onImageSelected {
-                ImagePickerButton { image in
-                    onImageSelected(image)
+                ImagePickerButton { image, keepFullSize in
+                    onImageSelected(image, keepFullSize)
                 }
             }
 

@@ -30,7 +30,7 @@ actor ImageService {
 
     // MARK: - Upload
 
-    func uploadImage(_ image: UIImage, noteId: UUID) async throws -> NoteImage {
+    func uploadImage(_ image: UIImage, noteId: UUID, keepFullSize: Bool = false) async throws -> NoteImage {
         // Refresh token if needed before upload
         try? await api.refreshAccessTokenIfNeeded()
 
@@ -39,7 +39,15 @@ actor ImageService {
             throw ImageError.unauthorized
         }
 
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+        // Process image: resize if needed unless keeping full size
+        let processedImage: UIImage
+        if keepFullSize {
+            processedImage = image
+        } else {
+            processedImage = resizeIfNeeded(image, maxDimension: 2000)
+        }
+
+        guard let imageData = processedImage.jpegData(compressionQuality: 0.85) else {
             throw ImageError.compressionFailed
         }
 
@@ -56,6 +64,9 @@ actor ImageService {
         body.appendString("--\(boundary)\r\n")
         body.appendString("Content-Disposition: form-data; name=\"note_id\"\r\n\r\n")
         body.appendString("\(noteId.uuidString)\r\n")
+        body.appendString("--\(boundary)\r\n")
+        body.appendString("Content-Disposition: form-data; name=\"keep_full_size\"\r\n\r\n")
+        body.appendString("\(keepFullSize)\r\n")
         body.appendString("--\(boundary)\r\n")
         body.appendString("Content-Disposition: form-data; name=\"file\"; filename=\"image.jpg\"\r\n")
         body.appendString("Content-Type: image/jpeg\r\n\r\n")
@@ -83,10 +94,24 @@ actor ImageService {
         let noteImage = try decoder.decode(NoteImage.self, from: data)
 
         // Cache the uploaded image
-        cache.setObject(image, forKey: noteImage.id.uuidString as NSString)
-        await saveToFileCacheAsync(image, id: noteImage.id)
+        cache.setObject(processedImage, forKey: noteImage.id.uuidString as NSString)
+        await saveToFileCacheAsync(processedImage, id: noteImage.id)
 
         return noteImage
+    }
+
+    // MARK: - Image Processing
+
+    private nonisolated func resizeIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        guard size.width > maxDimension || size.height > maxDimension else { return image }
+
+        let scale = min(maxDimension / size.width, maxDimension / size.height)
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+
+        return UIGraphicsImageRenderer(size: newSize).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 
     // MARK: - Fetch Images for Note

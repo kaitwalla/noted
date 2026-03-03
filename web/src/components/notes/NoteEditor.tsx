@@ -21,6 +21,8 @@ export function NoteEditor() {
   const [showReminderPicker, setShowReminderPicker] = useState(false);
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [keepFullSize, setKeepFullSize] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { selectedNotebookId, addNote, fetchNotes, tags } = useStore();
@@ -66,7 +68,7 @@ export function NoteEditor() {
       if (pendingImages.length > 0) {
         for (const pending of pendingImages) {
           try {
-            await api.uploadImage(note.id, pending.file);
+            await api.uploadImage(note.id, pending.file, keepFullSize);
           } catch (err) {
             console.error('Failed to upload image:', err);
           }
@@ -83,6 +85,7 @@ export function NoteEditor() {
       setShowReminderPicker(false);
       setShowTagPicker(false);
       setPendingImages([]);
+      setKeepFullSize(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -99,19 +102,46 @@ export function NoteEditor() {
     fileInputRef.current?.click();
   };
 
+  const addPendingImages = (files: File[]) => {
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'));
+    const newPending: PendingImage[] = imageFiles.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setPendingImages((prev) => [...prev, ...newPending]);
+  };
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || !editor) return;
 
-    const newPending: PendingImage[] = [];
-    for (const file of Array.from(files)) {
-      const preview = URL.createObjectURL(file);
-      newPending.push({ file, preview });
-    }
-    setPendingImages((prev) => [...prev, ...newPending]);
+    addPendingImages(Array.from(files));
 
     // Clear the input
     e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      addPendingImages(files);
+    }
   };
 
   const removeImage = (index: number) => {
@@ -131,7 +161,12 @@ export function NoteEditor() {
   const selectedTags = tags.filter((t) => selectedTagIds.includes(t.id));
 
   return (
-    <div className="note-editor">
+    <div
+      className={`note-editor ${isDragging ? 'drag-active' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {(selectedTags.length > 0 || reminderDate || pendingImages.length > 0) && (
         <div className="editor-attachments">
           {selectedTags.map((tag) => (
@@ -168,6 +203,14 @@ export function NoteEditor() {
               </button>
             </div>
           ))}
+          <label className="keep-full-size">
+            <input
+              type="checkbox"
+              checked={keepFullSize}
+              onChange={(e) => setKeepFullSize(e.target.checked)}
+            />
+            Keep full size
+          </label>
         </div>
       )}
 

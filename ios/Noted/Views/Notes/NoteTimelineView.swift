@@ -120,11 +120,11 @@ struct NoteTimelineView: View {
                         scrollToBottom = true
                     }
                 },
-                onImageSelected: { image in
+                onImageSelected: { image, keepFullSize in
                     // Create note for the image with marker content
                     Task {
                         if let note = await viewModel.createNoteAndReturn(content: "[image]") {
-                            await uploadImage(image, noteId: note.id)
+                            await uploadImage(image, noteId: note.id, keepFullSize: keepFullSize)
                             scrollToBottom = true
                         }
                     }
@@ -186,8 +186,8 @@ struct NoteTimelineView: View {
         }
     }
 
-    private func uploadImage(_ image: UIImage, noteId: UUID) async {
-        if let noteImage = await imagesViewModel.uploadImage(image, noteId: noteId) {
+    private func uploadImage(_ image: UIImage, noteId: UUID, keepFullSize: Bool = false) async {
+        if let noteImage = await imagesViewModel.uploadImage(image, noteId: noteId, keepFullSize: keepFullSize) {
             await MainActor.run {
                 var images = noteImages[noteId] ?? []
                 images.append(noteImage)

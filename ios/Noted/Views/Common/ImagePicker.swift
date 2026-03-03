@@ -3,11 +3,12 @@ import SwiftUI
 import UIKit
 
 struct ImagePickerButton: View {
-    let onImageSelected: (UIImage) -> Void
+    let onImageSelected: (UIImage, Bool) -> Void
 
     @State private var showingOptions = false
     @State private var showingCamera = false
     @State private var selectedItem: PhotosPickerItem?
+    @State private var keepFullSize = false
 
     private var isCameraAvailable: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)
@@ -26,6 +27,12 @@ struct ImagePickerButton: View {
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 Label("Choose from Library", systemImage: "photo.on.rectangle")
             }
+
+            Divider()
+
+            Toggle(isOn: $keepFullSize) {
+                Label("Keep Full Size", systemImage: "arrow.up.left.and.arrow.down.right")
+            }
         } label: {
             Image(systemName: "photo")
                 .font(.title3)
@@ -33,7 +40,7 @@ struct ImagePickerButton: View {
         }
         .fullScreenCover(isPresented: $showingCamera) {
             CameraView { image in
-                onImageSelected(image)
+                onImageSelected(image, keepFullSize)
             }
         }
         .onChange(of: selectedItem) { _, newValue in
@@ -41,7 +48,7 @@ struct ImagePickerButton: View {
                 if let data = try? await newValue?.loadTransferable(type: Data.self),
                    let image = UIImage(data: data) {
                     await MainActor.run {
-                        onImageSelected(image)
+                        onImageSelected(image, keepFullSize)
                     }
                 }
             }
@@ -87,7 +94,7 @@ struct CameraView: UIViewControllerRepresentable {
 }
 
 #Preview {
-    ImagePickerButton { _ in
+    ImagePickerButton { _, _ in
         // Preview handler
     }
 }

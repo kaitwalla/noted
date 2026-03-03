@@ -27,13 +27,13 @@ final class ImagesViewModel {
     }
 
     @MainActor
-    func uploadImage(_ image: UIImage, noteId: UUID) async -> NoteImage? {
+    func uploadImage(_ image: UIImage, noteId: UUID, keepFullSize: Bool = false) async -> NoteImage? {
         isUploading = true
         uploadProgress = 0.0
         errorMessage = nil
 
         do {
-            let noteImage = try await imageService.uploadImage(image, noteId: noteId)
+            let noteImage = try await imageService.uploadImage(image, noteId: noteId, keepFullSize: keepFullSize)
             images.append(noteImage)
             isUploading = false
             return noteImage

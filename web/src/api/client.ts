@@ -156,10 +156,11 @@ class ApiClient {
   }
 
   // Images
-  async uploadImage(noteId: string, file: File): Promise<Image> {
+  async uploadImage(noteId: string, file: File, keepFullSize = false): Promise<Image> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('note_id', noteId);
+    formData.append('keep_full_size', keepFullSize.toString());
     const response = await this.client.post<Image>('/images', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });

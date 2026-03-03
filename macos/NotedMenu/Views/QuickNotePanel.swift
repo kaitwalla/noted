@@ -74,6 +74,7 @@ struct QuickNoteView: View {
     var onDismiss: () -> Void
 
     @FocusState private var isTextFieldFocused: Bool
+    @State private var isDragging = false
 
     var body: some View {
         VStack(spacing: 12) {
@@ -95,15 +96,63 @@ struct QuickNoteView: View {
                 }
             }
 
-            // Text editor
+            // Pending images preview
+            if !viewModel.pendingImages.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(viewModel.pendingImages.enumerated()), id: \.element.id) { index, pending in
+                            ZStack(alignment: .topTrailing) {
+                                Image(nsImage: pending.image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 60, height: 60)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                Button {
+                                    viewModel.removeImage(at: index)
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.caption)
+                                        .foregroundColor(.white)
+                                        .background(Circle().fill(Color.black.opacity(0.6)))
+                                }
+                                .buttonStyle(.plain)
+                                .offset(x: 4, y: -4)
+                            }
+                        }
+
+                        // Keep full size toggle
+                        Toggle(isOn: $viewModel.keepFullSize) {
+                            Text("Full size")
+                                .font(.caption)
+                        }
+                        .toggleStyle(.checkbox)
+                        .padding(.leading, 8)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
+            // Text editor with drop support
             TextEditor(text: $viewModel.noteText)
                 .font(.body)
                 .frame(minHeight: 80, maxHeight: 120)
                 .scrollContentBackground(.hidden)
                 .padding(8)
-                .background(Color(nsColor: .textBackgroundColor))
-                .cornerRadius(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(nsColor: .textBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(isDragging ? Color.accentColor : Color.clear, lineWidth: 2)
+                                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: isDragging ? [5] : []))
+                        )
+                )
                 .focused($isTextFieldFocused)
+                .onDrop(of: [.image, .fileURL], isTargeted: $isDragging) { providers in
+                    handleDrop(providers: providers)
+                    return true
+                }
 
             // Error message
             if let error = viewModel.error {
@@ -141,13 +190,41 @@ struct QuickNoteView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .keyboardShortcut(.return, modifiers: .command)
-                .disabled(viewModel.noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSending)
+                .disabled(!canSend || viewModel.isSending)
             }
         }
         .padding(16)
         .frame(width: 400)
         .onAppear {
             isTextFieldFocused = true
+        }
+    }
+
+    private var canSend: Bool {
+        !viewModel.noteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !viewModel.pendingImages.isEmpty
+    }
+
+    private func handleDrop(providers: [NSItemProvider]) {
+        for provider in providers {
+            if provider.hasItemConformingToTypeIdentifier("public.image") {
+                provider.loadObject(ofClass: NSImage.self) { image, _ in
+                    if let nsImage = image as? NSImage {
+                        DispatchQueue.main.async {
+                            viewModel.addImages([nsImage])
+                        }
+                    }
+                }
+            } else if provider.hasItemConformingToTypeIdentifier("public.file-url") {
+                provider.loadItem(forTypeIdentifier: "public.file-url") { item, _ in
+                    if let data = item as? Data,
+                       let url = URL(dataRepresentation: data, relativeTo: nil),
+                       let image = NSImage(contentsOf: url) {
+                        DispatchQueue.main.async {
+                            viewModel.addImages([image])
+                        }
+                    }
+                }
+            }
         }
     }
 

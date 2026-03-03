@@ -240,3 +240,63 @@ private struct TokenRefreshResponse: Decodable {
 }
 
 struct Empty: Codable {}
+
+// MARK: - Image Upload
+
+extension APIService {
+    func uploadImage(_ imageData: Data, filename: String, noteId: UUID, keepFullSize: Bool) async throws -> NoteImage {
+        try? await refreshAccessTokenIfNeeded()
+
+        guard let token = accessToken else {
+            throw APIError.unauthorized
+        }
+
+        let boundary = UUID().uuidString
+        let url = baseURL.appendingPathComponent("images")
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        // Build multipart body
+        var body = Data()
+        body.appendString("--\(boundary)\r\n")
+        body.appendString("Content-Disposition: form-data; name=\"note_id\"\r\n\r\n")
+        body.appendString("\(noteId.uuidString)\r\n")
+        body.appendString("--\(boundary)\r\n")
+        body.appendString("Content-Disposition: form-data; name=\"keep_full_size\"\r\n\r\n")
+        body.appendString("\(keepFullSize)\r\n")
+        body.appendString("--\(boundary)\r\n")
+        body.appendString("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n")
+        body.appendString("Content-Type: image/jpeg\r\n\r\n")
+        body.append(imageData)
+        body.appendString("\r\n")
+        body.appendString("--\(boundary)--\r\n")
+
+        request.httpBody = body
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401 {
+                throw APIError.unauthorized
+            }
+            throw APIError.httpError(statusCode: httpResponse.statusCode, message: nil)
+        }
+
+        return try decoder.decode(NoteImage.self, from: data)
+    }
+}
+
+private extension Data {
+    mutating func appendString(_ string: String) {
+        if let data = string.data(using: .utf8) {
+            append(data)
+        }
+    }
+}
