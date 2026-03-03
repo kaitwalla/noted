@@ -1,0 +1,167 @@
+name: Build Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'macos/**'
+      - 'server/**'
+      - '.github/workflows/build-macos.yml'
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
+
+      - name: Build
+        run: |
+          cd macos
+          xcodebuild -project NotedMenu.xcodeproj \
+            -scheme NotedMenu \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Create DMG
+        run: |
+          cd macos
+          APP_PATH="build/Build/Products/Release/NotedMenu.app"
+          DMG_NAME="NotedMenu.dmg"
+
+          mkdir -p dmg_contents
+          cp -R "$APP_PATH" dmg_contents/
+          ln -s /Applications dmg_contents/Applications
+
+          hdiutil create -volname "NotedMenu" \
+            -srcfolder dmg_contents \
+            -ov -format UDZO \
+            "$DMG_NAME"
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: macos/NotedMenu.dmg
+
+  build-server:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build server
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          cd server
+          go build -ldflags="-s -w" -o noted-server-${{ matrix.suffix }} ./cmd/server
+
+      - name: Upload server artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.suffix }}
+          path: server/noted-server-${{ matrix.suffix }}
+
+  release:
+    needs: [build-macos, build-server]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          cp artifacts/macos-app/NotedMenu.dmg release/
+          cp artifacts/server-linux-amd64/noted-server-linux-amd64 release/
+          cp artifacts/server-linux-arm64/noted-server-linux-arm64 release/
+          cp artifacts/server-darwin-amd64/noted-server-darwin-amd64 release/
+          cp artifacts/server-darwin-arm64/noted-server-darwin-arm64 release/
+          chmod +x release/noted-server-*
+          ls -la release/
+
+      - name: Get version info
+        id: version
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.date }}-${{ steps.version.outputs.short_sha }}
+          name: Release ${{ steps.version.outputs.date }}
+          body: |
+            Automated build of Noted apps.
+
+            Commit: ${{ github.sha }}
+
+            ## Downloads
+
+            ### macOS Menu Bar App
+            - **NotedMenu.dmg** - macOS menu bar app for quick note capture
+
+            ### Server
+            - **noted-server-linux-amd64** - Linux x86_64
+            - **noted-server-linux-arm64** - Linux ARM64
+            - **noted-server-darwin-amd64** - macOS Intel
+            - **noted-server-darwin-arm64** - macOS Apple Silicon
+
+            ## macOS App Installation
+            1. Download NotedMenu.dmg
+            2. Open the DMG and drag NotedMenu to Applications
+            3. Right-click the app and select "Open" (required for unsigned apps)
+
+            ## Server Usage
+            ```bash
+            chmod +x noted-server-linux-amd64
+            ./noted-server-linux-amd64
+            ```
+          files: |
+            release/NotedMenu.dmg
+            release/noted-server-linux-amd64
+            release/noted-server-linux-arm64
+            release/noted-server-darwin-amd64
+            release/noted-server-darwin-arm64
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
