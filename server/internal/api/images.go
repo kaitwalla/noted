@@ -125,6 +125,7 @@ func (s *Server) handleUploadImage(w http.ResponseWriter, r *http.Request) {
 
 	// Upload to blob store
 	if err := s.blobStore.Put(r.Context(), storageKey, file, contentType, header.Size); err != nil {
+		log.Printf("ERROR: failed to upload image to blob store: %v", err)
 		respondError(w, http.StatusInternalServerError, "server_error", "failed to save file")
 		return
 	}
@@ -155,8 +156,8 @@ func (s *Server) handleUploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate signed URL for the response (use image ID, not storage key)
-	signedURL, err := s.blobStore.GetSignedURL(r.Context(), imageID.String(), s.config.StorageURLExpiry)
+	// Generate signed URL for the response (use storage key with extension)
+	signedURL, err := s.blobStore.GetSignedURL(r.Context(), storageKey, s.config.StorageURLExpiry)
 	if err != nil {
 		// Log error but don't fail the request - image was uploaded successfully
 		log.Printf("WARNING: failed to generate signed URL: %v", err)
@@ -318,10 +319,10 @@ func (s *Server) handleListNoteImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate signed URLs for each image (use image ID, not storage key)
+	// Generate signed URLs for each image
 	response := make([]ImageResponse, len(images))
 	for i, img := range images {
-		signedURL, _ := s.blobStore.GetSignedURL(r.Context(), img.ID.String(), s.config.StorageURLExpiry)
+		signedURL, _ := s.blobStore.GetSignedURL(r.Context(), img.StorageKey, s.config.StorageURLExpiry)
 		response[i] = ImageResponse{
 			ID:         img.ID,
 			NoteID:     img.NoteID,
@@ -377,7 +378,7 @@ func (s *Server) handleGetImageURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate signed URL
-	signedURL, err := s.blobStore.GetSignedURL(r.Context(), id.String(), s.config.StorageURLExpiry)
+	signedURL, err := s.blobStore.GetSignedURL(r.Context(), image.StorageKey, s.config.StorageURLExpiry)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "server_error", "failed to generate signed URL")
 		return
