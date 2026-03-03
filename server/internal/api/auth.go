@@ -20,6 +20,11 @@ type Claims struct {
 }
 
 func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
+	if s.config.DisableRegistration {
+		respondError(w, http.StatusForbidden, "registration_disabled", "registration is disabled")
+		return
+	}
+
 	var req models.CreateUserRequest
 	if err := decodeJSON(r, &req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid_request", "invalid JSON body")
