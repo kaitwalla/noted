@@ -12,6 +12,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/noted/server/internal/api"
 	"github.com/noted/server/internal/config"
 	"github.com/noted/server/internal/storage"
@@ -21,6 +22,9 @@ import (
 )
 
 func main() {
+	// Load .env file if present (ignores error if not found)
+	_ = godotenv.Load()
+
 	cfg := config.Load()
 
 	ctx := context.Background()
