@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { AuthResponse, Notebook, Note, Tag, User, CreateNoteRequest, UpdateNoteRequest, Image } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ApiClient {
   private client: AxiosInstance;
