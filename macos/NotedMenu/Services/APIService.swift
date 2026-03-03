@@ -3,11 +3,24 @@ import Foundation
 final class APIService {
     static let shared = APIService()
 
+    private static let apiURLKey = "apiURL"
     #if DEBUG
-    private let baseURL = URL(string: "http://localhost:8080/api")!
+    private static let defaultAPIURL = "http://localhost:8080/api"
     #else
-    private let baseURL = URL(string: "https://api.noted.app/api")!
+    private static let defaultAPIURL = "https://api.noted.app/api"
     #endif
+
+    var baseURL: URL {
+        let urlString = UserDefaults.standard.string(forKey: Self.apiURLKey) ?? Self.defaultAPIURL
+        return URL(string: urlString) ?? URL(string: Self.defaultAPIURL)!
+    }
+
+    static var apiURL: String {
+        get { UserDefaults.standard.string(forKey: apiURLKey) ?? defaultAPIURL }
+        set { UserDefaults.standard.set(newValue, forKey: apiURLKey) }
+    }
+
+    static var defaultURL: String { defaultAPIURL }
 
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()

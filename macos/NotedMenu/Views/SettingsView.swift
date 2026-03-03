@@ -7,6 +7,7 @@ struct SettingsView: View {
 
     @State private var launchAtLogin = false
     @State private var selectedNotebookId: String = ""
+    @State private var apiURL: String = ""
 
     var body: some View {
         VStack(spacing: 20) {
@@ -50,6 +51,26 @@ struct SettingsView: View {
                             setLaunchAtLogin(newValue)
                         }
                 }
+
+                // API URL
+                Section("Server") {
+                    TextField("API URL", text: $apiURL)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit {
+                            saveAPIURL()
+                        }
+                    Text("Default: \(APIService.defaultURL)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    HStack {
+                        Button("Reset to Default") {
+                            apiURL = APIService.defaultURL
+                            saveAPIURL()
+                        }
+                        .buttonStyle(.borderless)
+                        .font(.caption)
+                    }
+                }
             }
             .formStyle(.grouped)
 
@@ -62,10 +83,18 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 350, height: 320)
+        .frame(width: 400, height: 420)
         .onAppear {
             selectedNotebookId = appViewModel.defaultNotebookId
             launchAtLogin = SMAppService.mainApp.status == .enabled
+            apiURL = APIService.apiURL
+        }
+    }
+
+    private func saveAPIURL() {
+        let trimmed = apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, URL(string: trimmed) != nil {
+            APIService.apiURL = trimmed
         }
     }
 
