@@ -6,9 +6,50 @@ struct LoginView: View {
 
     @State private var email = ""
     @State private var password = ""
+    @State private var showServerConfig = false
+    @State private var apiURL = APIService.apiURL
 
     var body: some View {
         VStack(spacing: 16) {
+            HStack {
+                Spacer()
+                Button {
+                    showServerConfig.toggle()
+                } label: {
+                    Image(systemName: "server.rack")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showServerConfig, arrowEdge: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Server URL")
+                            .font(.headline)
+                        TextField("API URL", text: $apiURL)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 250)
+                            .onSubmit {
+                                saveAPIURL()
+                            }
+                        HStack {
+                            Button("Reset") {
+                                apiURL = APIService.defaultURL
+                                saveAPIURL()
+                            }
+                            .buttonStyle(.borderless)
+                            .font(.caption)
+                            Spacer()
+                            Button("Save") {
+                                saveAPIURL()
+                                showServerConfig = false
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        }
+                    }
+                    .padding()
+                }
+            }
+
             Image(systemName: "note.text")
                 .font(.system(size: 40))
                 .foregroundColor(.accentColor)
@@ -69,6 +110,13 @@ struct LoginView: View {
     private func login() {
         Task {
             await appViewModel.login(email: email, password: password)
+        }
+    }
+
+    private func saveAPIURL() {
+        let trimmed = apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, URL(string: trimmed) != nil {
+            APIService.apiURL = trimmed
         }
     }
 }
