@@ -3,6 +3,10 @@ package api
 import (
 	"bytes"
 	"errors"
+	"image"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"log"
 	"mime"
@@ -11,11 +15,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/noted/server/internal/models"
 	"github.com/noted/server/internal/storage"
 	"github.com/noted/server/internal/store"
+	"golang.org/x/image/webp"
 )
 
 const maxUploadSize = 10 << 20 // 10MB
@@ -109,6 +115,36 @@ func (s *Server) handleUploadImage(w http.ResponseWriter, r *http.Request) {
 	// Use detected content type (more reliable than header)
 	contentType := detectedType
 
+	// Check if user wants to keep full size
+	keepFullSize := r.FormValue("keep_full_size") == "true"
+
+	// Read the entire file for processing
+	fileData, err := io.ReadAll(file)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "server_error", "failed to read file")
+		return
+	}
+
+	var uploadData []byte
+	var uploadSize int64
+
+	if !keepFullSize {
+		// Try to resize the image
+		resizedData, resizedContentType, err := resizeImage(fileData, contentType, 2000)
+		if err != nil {
+			log.Printf("WARNING: failed to resize image, using original: %v", err)
+			uploadData = fileData
+			uploadSize = int64(len(fileData))
+		} else {
+			uploadData = resizedData
+			uploadSize = int64(len(resizedData))
+			contentType = resizedContentType
+		}
+	} else {
+		uploadData = fileData
+		uploadSize = int64(len(fileData))
+	}
+
 	// Generate storage key with validated extension
 	imageID := uuid.New()
 	ext := getExtensionForMimeType(contentType)
@@ -124,7 +160,7 @@ func (s *Server) handleUploadImage(w http.ResponseWriter, r *http.Request) {
 	storageKey := imageID.String() + ext
 
 	// Upload to blob store
-	if err := s.blobStore.Put(r.Context(), storageKey, file, contentType, header.Size); err != nil {
+	if err := s.blobStore.Put(r.Context(), storageKey, bytes.NewReader(uploadData), contentType, uploadSize); err != nil {
 		log.Printf("ERROR: failed to upload image to blob store: %v", err)
 		respondError(w, http.StatusInternalServerError, "server_error", "failed to save file")
 		return
@@ -143,7 +179,7 @@ func (s *Server) handleUploadImage(w http.ResponseWriter, r *http.Request) {
 		Filename:   safeFilename,
 		MimeType:   contentType,
 		StorageKey: storageKey,
-		Size:       header.Size,
+		Size:       uploadSize,
 		CreatedAt:  time.Now(),
 	}
 
@@ -457,4 +493,65 @@ func detectContentType(r io.Reader) (string, io.Reader, error) {
 
 	contentType := http.DetectContentType(buf)
 	return contentType, io.MultiReader(bytes.NewReader(buf), r), nil
+}
+
+// resizeImage resizes an image if either dimension exceeds maxSize
+// Returns the resized image data, content type, and any error
+func resizeImage(data []byte, contentType string, maxSize int) ([]byte, string, error) {
+	reader := bytes.NewReader(data)
+
+	// Decode based on content type
+	var img image.Image
+	var err error
+
+	switch contentType {
+	case "image/jpeg":
+		img, err = jpeg.Decode(reader)
+	case "image/png":
+		img, err = png.Decode(reader)
+	case "image/gif":
+		img, err = gif.Decode(reader)
+	case "image/webp":
+		img, err = webp.Decode(reader)
+	default:
+		return data, contentType, nil // Unknown type, return original
+	}
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	bounds := img.Bounds()
+	width := bounds.Dx()
+	height := bounds.Dy()
+
+	// Check if resize is needed
+	if width <= maxSize && height <= maxSize {
+		return data, contentType, nil
+	}
+
+	// Resize using Lanczos filter (high quality)
+	resized := imaging.Fit(img, maxSize, maxSize, imaging.Lanczos)
+
+	// Encode to buffer
+	var buf bytes.Buffer
+
+	switch contentType {
+	case "image/jpeg":
+		err = jpeg.Encode(&buf, resized, &jpeg.Options{Quality: 85})
+	case "image/png":
+		err = png.Encode(&buf, resized)
+	case "image/gif":
+		err = gif.Encode(&buf, resized, nil)
+	case "image/webp":
+		// WebP encoding not natively supported, convert to JPEG
+		err = jpeg.Encode(&buf, resized, &jpeg.Options{Quality: 85})
+		contentType = "image/jpeg"
+	}
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return buf.Bytes(), contentType, nil
 }
