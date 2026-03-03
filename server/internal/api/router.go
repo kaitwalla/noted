@@ -1,12 +1,15 @@
 package api
 
 import (
+	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/noted/server/internal/config"
+	"github.com/noted/server/internal/frontend"
 	"github.com/noted/server/internal/storage"
 	"github.com/noted/server/internal/store"
 )
@@ -125,5 +128,50 @@ func (s *Server) setupRoutes() {
 			r.Get("/sync", s.handleSyncGet)
 			r.Post("/sync", s.handleSyncPost)
 		})
+	})
+
+	// Serve embedded frontend
+	s.serveFrontend(r)
+}
+
+// serveFrontend serves the embedded frontend files
+func (s *Server) serveFrontend(r *chi.Mux) {
+	frontendFS, err := frontend.FS()
+	if err != nil {
+		return // Frontend not embedded, skip
+	}
+
+	// Create file server
+	fileServer := http.FileServer(http.FS(frontendFS))
+
+	// Serve frontend files, fallback to index.html for SPA routing
+	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/")
+
+		// Try to open the file
+		f, err := frontendFS.Open(path)
+		if err == nil {
+			f.Close()
+			fileServer.ServeHTTP(w, r)
+			return
+		}
+
+		// Check if it's a directory with index.html
+		if path != "" {
+			if f, err := frontendFS.Open(path + "/index.html"); err == nil {
+				f.Close()
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+		}
+
+		// Fallback to index.html for SPA routing
+		indexFile, err := fs.ReadFile(frontendFS, "index.html")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.Write(indexFile)
 	})
 }
