@@ -6,8 +6,11 @@ on:
     paths:
       - 'macos/**'
       - 'server/**'
-      - '.github/workflows/build-macos.yml'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-macos:
