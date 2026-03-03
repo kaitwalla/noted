@@ -112,8 +112,8 @@ final class QuickNoteViewModel: ObservableObject {
         let scale = min(maxDimension / size.width, maxDimension / size.height)
         let newSize = NSSize(width: size.width * scale, height: size.height * scale)
 
-        // Use NSBitmapImageRep for thread-safe resizing
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+        // Verify image is valid before resizing
+        guard image.cgImage(forProposedRect: nil, context: nil, hints: nil) != nil else {
             return originalData
         }
 
