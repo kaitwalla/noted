@@ -26,6 +26,7 @@ func main() {
 	_ = godotenv.Load()
 
 	cfg := config.Load()
+	cfg.ValidateUpdateConfig()
 
 	ctx := context.Background()
 

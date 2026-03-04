@@ -33,6 +33,12 @@ type Config struct {
 	S3SecretAccessKey string
 	S3UsePathStyle    bool   // true for MinIO
 	S3PublicURL       string // Optional CDN URL
+
+	// Auto-update configuration
+	UpdateSecret   string // Secret for authenticating update requests
+	UpdateEnabled  bool   // Whether auto-update is enabled
+	GitBranch      string // Git branch to pull from
+	ServerRootPath string // Path to the server directory for rebuilding
 }
 
 // Load returns configuration from environment variables with defaults
@@ -100,6 +106,20 @@ func Load() *Config {
 		S3SecretAccessKey: getEnv("S3_SECRET_ACCESS_KEY", ""),
 		S3UsePathStyle:    getBool("S3_USE_PATH_STYLE", false),
 		S3PublicURL:       getEnv("S3_PUBLIC_URL", ""),
+
+		// Auto-update settings
+		UpdateSecret:   getEnv("UPDATE_SECRET", ""),
+		UpdateEnabled:  getBool("UPDATE_ENABLED", false),
+		GitBranch:      getEnv("GIT_BRANCH", "main"),
+		ServerRootPath: getEnv("SERVER_ROOT_PATH", "."),
+	}
+}
+
+// ValidateUpdateConfig validates auto-update configuration
+// Called after Load() to ensure UPDATE_SECRET is set when UPDATE_ENABLED=true
+func (c *Config) ValidateUpdateConfig() {
+	if c.UpdateEnabled && c.UpdateSecret == "" {
+		log.Fatal("UPDATE_SECRET must be set when UPDATE_ENABLED=true")
 	}
 }
 
