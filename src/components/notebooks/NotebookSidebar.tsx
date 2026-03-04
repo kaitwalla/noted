@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Book, Plus, Trash2, LogOut, Search, Tag } from 'lucide-react';
+import { Book, Plus, Trash2, LogOut, Search, Tag, Palette } from 'lucide-react';
 import { useStore } from '../../store';
 import { SearchPanel } from '../common/SearchPanel';
 import { TagsPanel } from '../common/TagsPanel';
+import { ThemePanel } from '../common/ThemePanel';
 
 interface NotebookSidebarProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export function NotebookSidebar({ isOpen, onClose }: NotebookSidebarProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showTags, setShowTags] = useState(false);
+  const [showThemes, setShowThemes] = useState(false);
   const {
     notebooks,
     selectedNotebookId,
@@ -68,7 +70,10 @@ export function NotebookSidebar({ isOpen, onClose }: NotebookSidebarProps) {
     <>
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <h2>Noted</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <img src="/logo.png" alt="" style={{ width: 28, height: 28, borderRadius: '50%' }} />
+            <h2>Noted</h2>
+          </div>
           <button className="icon-btn" onClick={() => setIsAdding(true)} title="New notebook">
             <Plus size={20} />
           </button>
@@ -83,6 +88,10 @@ export function NotebookSidebar({ isOpen, onClose }: NotebookSidebarProps) {
           <button className="action-btn" onClick={() => setShowTags(true)}>
             <Tag size={16} />
             <span>Tags</span>
+          </button>
+          <button className="action-btn" onClick={() => setShowThemes(true)}>
+            <Palette size={16} />
+            <span>Theme</span>
           </button>
         </div>
 
@@ -155,6 +164,7 @@ export function NotebookSidebar({ isOpen, onClose }: NotebookSidebarProps) {
 
       <SearchPanel isOpen={showSearch} onClose={() => setShowSearch(false)} />
       <TagsPanel isOpen={showTags} onClose={() => setShowTags(false)} />
+      <ThemePanel isOpen={showThemes} onClose={() => setShowThemes(false)} />
     </>
   );
 }
