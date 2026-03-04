@@ -32,6 +32,7 @@ export function LoginPage() {
   return (
     <div className="auth-container">
       <div className="auth-box">
+        <img src="/logo.png" alt="Noted" className="auth-logo" />
         <h1>Sign In</h1>
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}

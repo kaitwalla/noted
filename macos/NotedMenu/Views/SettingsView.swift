@@ -4,99 +4,222 @@ import Carbon
 
 struct SettingsView: View {
     @EnvironmentObject var appViewModel: AppViewModel
+    @ObservedObject var themeManager = ThemeManager.shared
     @Environment(\.dismiss) var dismiss
+    @Environment(\.themeColors) var themeColors
 
     @State private var launchAtLogin = false
     @State private var selectedNotebookId: String = ""
     @State private var apiURL: String = ""
-    @State private var isRecordingHotkey = false
-    @State private var hotkeyDisplay: String = ""
+    @State private var isRecordingQuickNote = false
+    @State private var quickNoteHotkeyDisplay: String = ""
+    @State private var isRecordingNotebook = false
+    @State private var notebookHotkeyDisplay: String = ""
+    @State private var keyMonitor: Any?
+    @State private var selectedMenuBarIcon: MenuBarIconStyle = .noteSwirl
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Text("Settings")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .foregroundColor(themeColors.text)
 
-            Form {
-                // Default Notebook
-                Section("Default Notebook") {
-                    Picker("Notebook", selection: $selectedNotebookId) {
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Theme
+                    settingsSection("Appearance") {
+                        ForEach(AppTheme.allCases) { theme in
+                            themeRow(theme)
+                        }
+                    }
+
+                    // Menu Bar Icon
+                    settingsSection("Menu Bar Icon") {
+                        ForEach(MenuBarIconStyle.allCases) { iconStyle in
+                            menuBarIconRow(iconStyle)
+                        }
+                    }
+
+                    // Default Notebook
+                    settingsSection("Default Notebook") {
                         ForEach(appViewModel.notebooks) { notebook in
-                            Text(notebook.title).tag(notebook.id.uuidString)
+                            notebookRow(notebook)
                         }
                     }
-                    .onChange(of: selectedNotebookId) { _, newValue in
-                        appViewModel.defaultNotebookId = newValue
-                    }
-                }
 
-                // Hotkey
-                Section("Global Hotkey") {
-                    HStack {
-                        Text("Quick Note:")
-                        Spacer()
-                        HotkeyRecorderButton(
-                            isRecording: $isRecordingHotkey,
-                            hotkeyDisplay: $hotkeyDisplay
-                        )
-                    }
-                    Text("Click the button and press your desired shortcut")
+                    // Hotkeys
+                    settingsSection("Global Hotkeys") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Quick Note hotkey
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("Quick Note:")
+                                        .foregroundColor(themeColors.text)
+                                    Spacer()
+                                    hotkeyButton(
+                                        display: quickNoteHotkeyDisplay,
+                                        isRecording: isRecordingQuickNote
+                                    ) {
+                                        isRecordingNotebook = false
+                                        isRecordingQuickNote = true
+                                    }
+                                }
+                                Text("Opens quick note panel")
+                                    .font(.caption)
+                                    .foregroundColor(themeColors.secondaryText)
+                            }
+
+                            Divider()
+
+                            // Notebook toggle hotkey
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text("Toggle Notebook:")
+                                        .foregroundColor(themeColors.text)
+                                    Spacer()
+                                    hotkeyButton(
+                                        display: notebookHotkeyDisplay,
+                                        isRecording: isRecordingNotebook
+                                    ) {
+                                        isRecordingQuickNote = false
+                                        isRecordingNotebook = true
+                                    }
+                                }
+                                Text("Opens menu bar popover")
+                                    .font(.caption)
+                                    .foregroundColor(themeColors.secondaryText)
+                            }
+                        }
+
+                        Text("Click a button and press your desired shortcut")
+                            .font(.caption)
+                            .foregroundColor(themeColors.secondaryText)
+                            .padding(.top, 4)
+
+                        HStack(spacing: 12) {
+                            Button("Reset Quick Note") {
+                                HotkeyManager.shared.updateHotkey(keyCode: 45, modifiers: UInt32(cmdKey | shiftKey))
+                                quickNoteHotkeyDisplay = HotkeyManager.shared.hotkeyString
+                            }
+                            Button("Reset Toggle") {
+                                HotkeyManager.shared.updateNotebookHotkey(keyCode: 31, modifiers: UInt32(cmdKey | shiftKey))
+                                notebookHotkeyDisplay = HotkeyManager.shared.notebookHotkeyString
+                            }
+                        }
+                        .buttonStyle(.borderless)
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                    Button("Reset to Cmd+Shift+N") {
-                        HotkeyManager.shared.updateHotkey(keyCode: 45, modifiers: UInt32(cmdKey | shiftKey))
-                        hotkeyDisplay = HotkeyManager.shared.hotkeyString
+                        .foregroundColor(themeColors.accent)
                     }
-                    .buttonStyle(.borderless)
-                    .font(.caption)
-                }
 
-                // Launch at Login
-                Section("Startup") {
-                    Toggle("Launch at Login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, newValue in
-                            setLaunchAtLogin(newValue)
-                        }
-                }
+                    // Launch at Login
+                    settingsSection("Startup") {
+                        Toggle("Launch at Login", isOn: $launchAtLogin)
+                            .toggleStyle(.switch)
+                            .foregroundColor(themeColors.text)
+                            .onChange(of: launchAtLogin) { _, newValue in
+                                setLaunchAtLogin(newValue)
+                            }
+                    }
 
-                // API URL
-                Section("Server") {
-                    TextField("API URL", text: $apiURL)
-                        .textFieldStyle(.roundedBorder)
-                        .onSubmit {
-                            saveAPIURL()
-                        }
-                    Text("Default: \(APIService.defaultURL)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    HStack {
+                    // API URL
+                    settingsSection("Server") {
+                        TextField("API URL", text: $apiURL)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit {
+                                saveAPIURL()
+                            }
+                        Text("Default: \(APIService.defaultURL)")
+                            .font(.caption)
+                            .foregroundColor(themeColors.secondaryText)
                         Button("Reset to Default") {
                             apiURL = APIService.defaultURL
                             saveAPIURL()
                         }
                         .buttonStyle(.borderless)
                         .font(.caption)
+                        .foregroundColor(themeColors.accent)
                     }
                 }
+                .padding(.horizontal, 4)
             }
-            .formStyle(.grouped)
 
             HStack {
                 Spacer()
-                Button("Done") {
+                Button {
                     dismiss()
+                } label: {
+                    Text("Done")
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(themeColors.accent)
+                        .cornerRadius(6)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.plain)
             }
         }
         .padding(20)
-        .frame(width: 400, height: 480)
+        .frame(width: 400, height: 580)
+        .background(themeColors.background)
         .onAppear {
             selectedNotebookId = appViewModel.defaultNotebookId
             launchAtLogin = SMAppService.mainApp.status == .enabled
             apiURL = APIService.apiURL
-            hotkeyDisplay = HotkeyManager.shared.hotkeyString
+            quickNoteHotkeyDisplay = HotkeyManager.shared.hotkeyString
+            notebookHotkeyDisplay = HotkeyManager.shared.notebookHotkeyString
+            if let savedIcon = UserDefaults.standard.string(forKey: "menuBarIconStyle"),
+               let iconStyle = MenuBarIconStyle(rawValue: savedIcon) {
+                selectedMenuBarIcon = iconStyle
+            }
+        }
+        .onDisappear {
+            stopKeyMonitor()
+        }
+        .onChange(of: isRecordingQuickNote) { _, recording in
+            if recording { startKeyMonitor() } else if !isRecordingNotebook { stopKeyMonitor() }
+        }
+        .onChange(of: isRecordingNotebook) { _, recording in
+            if recording { startKeyMonitor() } else if !isRecordingQuickNote { stopKeyMonitor() }
+        }
+    }
+
+    private func startKeyMonitor() {
+        stopKeyMonitor()
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let keyCode = UInt32(event.keyCode)
+
+            var modifiers: UInt32 = 0
+            if event.modifierFlags.contains(.command) { modifiers |= UInt32(cmdKey) }
+            if event.modifierFlags.contains(.shift) { modifiers |= UInt32(shiftKey) }
+            if event.modifierFlags.contains(.option) { modifiers |= UInt32(optionKey) }
+            if event.modifierFlags.contains(.control) { modifiers |= UInt32(controlKey) }
+
+            // Require at least one modifier
+            guard modifiers != 0 else { return event }
+
+            // Ignore modifier-only keys
+            let modifierKeyCodes: Set<UInt16> = [54, 55, 56, 57, 58, 59, 60, 61, 62, 63] // Cmd, Shift, Ctrl, Option, Fn variants
+            guard !modifierKeyCodes.contains(event.keyCode) else { return event }
+
+            if self.isRecordingQuickNote {
+                HotkeyManager.shared.updateHotkey(keyCode: keyCode, modifiers: modifiers)
+                self.quickNoteHotkeyDisplay = HotkeyManager.shared.hotkeyString
+                self.isRecordingQuickNote = false
+            } else if self.isRecordingNotebook {
+                HotkeyManager.shared.updateNotebookHotkey(keyCode: keyCode, modifiers: modifiers)
+                self.notebookHotkeyDisplay = HotkeyManager.shared.notebookHotkeyString
+                self.isRecordingNotebook = false
+            }
+            return nil // Consume the event
+        }
+    }
+
+    private func stopKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
         }
     }
 
@@ -118,82 +241,113 @@ struct SettingsView: View {
             print("Failed to set launch at login: \(error)")
         }
     }
-}
 
-// MARK: - Hotkey Recorder
+    // MARK: - Section Helper
 
-struct HotkeyRecorderButton: NSViewRepresentable {
-    @Binding var isRecording: Bool
-    @Binding var hotkeyDisplay: String
+    private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(themeColors.secondaryText)
 
-    func makeNSView(context: Context) -> HotkeyRecorderNSButton {
-        let button = HotkeyRecorderNSButton()
-        button.title = hotkeyDisplay.isEmpty ? "Click to record" : hotkeyDisplay
-        button.bezelStyle = .rounded
-        button.target = context.coordinator
-        button.action = #selector(Coordinator.buttonClicked)
-        button.coordinator = context.coordinator
-        return button
-    }
-
-    func updateNSView(_ nsView: HotkeyRecorderNSButton, context: Context) {
-        if isRecording {
-            nsView.title = "Press shortcut..."
-        } else {
-            nsView.title = hotkeyDisplay.isEmpty ? "Click to record" : hotkeyDisplay
+            VStack(alignment: .leading, spacing: 8) {
+                content()
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(themeColors.secondaryBackground)
+            .cornerRadius(8)
         }
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    private func themeRow(_ theme: AppTheme) -> some View {
+        Button {
+            themeManager.currentTheme = theme
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: themeManager.currentTheme == theme ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(themeManager.currentTheme == theme ? themeColors.accent : themeColors.secondaryText)
+
+                Image(systemName: theme.icon)
+                    .foregroundColor(themeColors.accent)
+                    .frame(width: 20)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(theme.rawValue)
+                        .foregroundColor(themeColors.text)
+                    Text(theme.description)
+                        .font(.caption)
+                        .foregroundColor(themeColors.secondaryText)
+                }
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
-    class Coordinator: NSObject {
-        var parent: HotkeyRecorderButton
+    private func notebookRow(_ notebook: Notebook) -> some View {
+        Button {
+            selectedNotebookId = notebook.id.uuidString
+            appViewModel.defaultNotebookId = notebook.id.uuidString
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selectedNotebookId == notebook.id.uuidString ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(selectedNotebookId == notebook.id.uuidString ? themeColors.accent : themeColors.secondaryText)
 
-        init(_ parent: HotkeyRecorderButton) {
-            self.parent = parent
+                Image(systemName: "book.closed")
+                    .foregroundColor(themeColors.accent)
+
+                Text(notebook.title)
+                    .foregroundColor(themeColors.text)
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
         }
-
-        @objc func buttonClicked() {
-            parent.isRecording = true
-        }
-
-        func handleKeyEvent(_ event: NSEvent) {
-            guard parent.isRecording else { return }
-
-            let keyCode = UInt32(event.keyCode)
-            var modifiers: UInt32 = 0
-
-            if event.modifierFlags.contains(.command) { modifiers |= UInt32(cmdKey) }
-            if event.modifierFlags.contains(.shift) { modifiers |= UInt32(shiftKey) }
-            if event.modifierFlags.contains(.option) { modifiers |= UInt32(optionKey) }
-            if event.modifierFlags.contains(.control) { modifiers |= UInt32(controlKey) }
-
-            // Require at least one modifier
-            guard modifiers != 0 else { return }
-
-            HotkeyManager.shared.updateHotkey(keyCode: keyCode, modifiers: modifiers)
-            parent.hotkeyDisplay = HotkeyManager.shared.hotkeyString
-            parent.isRecording = false
-        }
-    }
-}
-
-class HotkeyRecorderNSButton: NSButton {
-    weak var coordinator: HotkeyRecorderButton.Coordinator?
-
-    override var acceptsFirstResponder: Bool { true }
-
-    override func keyDown(with event: NSEvent) {
-        coordinator?.handleKeyEvent(event)
+        .buttonStyle(.plain)
     }
 
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if coordinator?.parent.isRecording == true {
-            coordinator?.handleKeyEvent(event)
-            return true
+    private func menuBarIconRow(_ iconStyle: MenuBarIconStyle) -> some View {
+        Button {
+            selectedMenuBarIcon = iconStyle
+            UserDefaults.standard.set(iconStyle.rawValue, forKey: "menuBarIconStyle")
+            NotificationCenter.default.post(name: .menuBarIconDidChange, object: iconStyle)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selectedMenuBarIcon == iconStyle ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(selectedMenuBarIcon == iconStyle ? themeColors.accent : themeColors.secondaryText)
+
+                MenuBarIconView(style: iconStyle, size: 20)
+                    .foregroundColor(themeColors.accent)
+
+                Text(iconStyle.rawValue)
+                    .foregroundColor(themeColors.text)
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
         }
-        return super.performKeyEquivalent(with: event)
+        .buttonStyle(.plain)
     }
+
+    private func hotkeyButton(display: String, isRecording: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(isRecording ? "Press shortcut..." : (display.isEmpty ? "Click to set" : display))
+                .font(.system(.body, design: .monospaced))
+                .foregroundColor(isRecording ? themeColors.accent : themeColors.text)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(themeColors.tertiaryBackground)
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(isRecording ? themeColors.accent : themeColors.border, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
 }

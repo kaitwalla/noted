@@ -3,6 +3,7 @@ import AppKit
 
 struct LoginView: View {
     @EnvironmentObject var appViewModel: AppViewModel
+    @Environment(\.themeColors) var themeColors
 
     @State private var email = ""
     @State private var password = ""
@@ -17,7 +18,7 @@ struct LoginView: View {
                     showServerConfig.toggle()
                 } label: {
                     Image(systemName: "server.rack")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(themeColors.secondaryText)
                 }
                 .buttonStyle(.plain)
                 .popover(isPresented: $showServerConfig, arrowEdge: .top) {
@@ -50,13 +51,15 @@ struct LoginView: View {
                 }
             }
 
-            Image(systemName: "note.text")
-                .font(.system(size: 40))
-                .foregroundColor(.accentColor)
+            Image("Logo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 60, height: 60)
 
             Text("Noted")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .foregroundColor(themeColors.text)
 
             VStack(spacing: 12) {
                 TextField("Email", text: $email)
@@ -74,7 +77,7 @@ struct LoginView: View {
             if let error = appViewModel.error {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(themeColors.error)
                     .multilineTextAlignment(.center)
             }
 
@@ -101,10 +104,11 @@ struct LoginView: View {
                 }
             }
             .buttonStyle(.plain)
-            .foregroundColor(.secondary)
+            .foregroundColor(themeColors.secondaryText)
         }
         .padding(20)
         .frame(width: 280)
+        .background(themeColors.background)
     }
 
     private func login() {

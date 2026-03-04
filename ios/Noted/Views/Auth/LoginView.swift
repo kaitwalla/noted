@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @Bindable var viewModel: AuthViewModel
+    @Environment(\.themeColors) private var colors
     @State private var showRegister = false
 
     var body: some View {
@@ -11,12 +12,14 @@ struct LoginView: View {
 
                 // Logo/Title
                 VStack(spacing: 8) {
-                    Image(systemName: "note.text")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.accent)
+                    Image("Logo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 100, height: 100)
                     Text("Noted")
                         .font(.largeTitle)
                         .fontWeight(.bold)
+                        .foregroundStyle(colors.text)
                 }
 
                 Spacer()
@@ -29,19 +32,19 @@ struct LoginView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .padding()
-                        .background(Color(.secondarySystemBackground))
+                        .background(colors.secondaryBackground)
                         .cornerRadius(10)
 
                     SecureField("Password", text: $viewModel.password)
                         .textContentType(.password)
                         .padding()
-                        .background(Color(.secondarySystemBackground))
+                        .background(colors.secondaryBackground)
                         .cornerRadius(10)
 
                     if let error = viewModel.errorMessage {
                         Text(error)
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(colors.error)
                             .multilineTextAlignment(.center)
                     }
 
@@ -70,9 +73,9 @@ struct LoginView: View {
                     showRegister = true
                 } label: {
                     Text("Don't have an account? ")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(colors.secondaryText)
                     + Text("Sign Up")
-                        .foregroundStyle(.accent)
+                        .foregroundStyle(colors.accent)
                 }
                 .padding(.bottom)
             }
