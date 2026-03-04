@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,19 +17,23 @@ import (
 
 // Server holds all dependencies for the HTTP server
 type Server struct {
-	router    *chi.Mux
-	store     store.Store
-	config    *config.Config
-	blobStore storage.BlobStore
+	router        *chi.Mux
+	store         store.Store
+	config        *config.Config
+	cfg           *config.Config // alias for update.go compatibility
+	blobStore     storage.BlobStore
+	publicLimiter *RateLimiter
 }
 
 // NewServer creates a new API server
 func NewServer(s store.Store, cfg *config.Config, blobStore storage.BlobStore) *Server {
 	srv := &Server{
-		router:    chi.NewRouter(),
-		store:     s,
-		config:    cfg,
-		blobStore: blobStore,
+		router:        chi.NewRouter(),
+		store:         s,
+		config:        cfg,
+		cfg:           cfg, // alias for update.go
+		blobStore:     blobStore,
+		publicLimiter: NewRateLimiter(60, time.Minute), // 60 requests per minute for public endpoints
 	}
 	srv.setupRoutes()
 	return srv
@@ -61,10 +66,23 @@ func (s *Server) setupRoutes() {
 		w.Write([]byte("ok"))
 	})
 
+	// Update routes (webhook and manual trigger)
+	r.Post("/webhook/github", s.handleGitHubWebhook)
+	r.Post("/api/update", s.handleUpdate)
+	r.Get("/api/update/status", s.handleUpdateStatus)
+
 	// API routes
 	r.Route("/api", func(r chi.Router) {
 		// Public image access (supports signed URLs OR JWT auth)
-		r.Get("/images/{id}", s.handleGetImage)
+		// Rate limited for unauthenticated access
+		r.With(s.publicLimiter.Middleware).Get("/images/{id}", s.handleGetImage)
+
+		// Public note access (no auth required, rate limited)
+		r.Group(func(r chi.Router) {
+			r.Use(s.publicLimiter.Middleware)
+			r.Get("/public/notes/{id}", s.handleGetPublicNote)
+			r.Get("/public/notes/{id}/images", s.handleListPublicNoteImages)
+		})
 
 		// Auth routes (public)
 		r.Route("/auth", func(r chi.Router) {
@@ -117,6 +135,9 @@ func (s *Server) setupRoutes() {
 				r.Post("/", s.handleUploadImage)
 				r.Get("/{id}/url", s.handleGetImageURL)
 			})
+
+			// Link previews
+			r.Post("/link-previews/fetch", s.handleFetchLinkPreviews)
 
 			// Note images
 			r.Get("/notes/{noteId}/images", s.handleListNoteImages)
