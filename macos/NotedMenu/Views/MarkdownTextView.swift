@@ -56,7 +56,10 @@ struct MarkdownTextView: NSViewRepresentable {
         // Set initial text
         if !text.isEmpty {
             textView.string = text
-            textView.applyMarkdownStyling()
+            // Defer styling to avoid layout recursion during initial setup
+            DispatchQueue.main.async {
+                textView.applyMarkdownStyling()
+            }
         }
 
         return scrollView
@@ -74,8 +77,21 @@ struct MarkdownTextView: NSViewRepresentable {
         if textView.string != text {
             let selectedRanges = textView.selectedRanges
             textView.string = text
-            textView.applyMarkdownStyling()
-            textView.selectedRanges = selectedRanges
+            // Defer styling to avoid layout recursion
+            DispatchQueue.main.async {
+                textView.applyMarkdownStyling()
+                // Restore selection after styling
+                let newLength = textView.textStorage?.length ?? 0
+                let validRanges = selectedRanges.compactMap { rangeValue -> NSValue? in
+                    let range = rangeValue.rangeValue
+                    let location = min(range.location, newLength)
+                    let length = min(range.length, newLength - location)
+                    return NSValue(range: NSRange(location: location, length: length))
+                }
+                if !validRanges.isEmpty {
+                    textView.selectedRanges = validRanges
+                }
+            }
         }
 
         // Focus handling - trigger when focusTrigger changes
@@ -107,8 +123,10 @@ struct MarkdownTextView: NSViewRepresentable {
             // Update binding
             parent.text = textView.string
 
-            // Apply markdown styling
-            textView.applyMarkdownStyling()
+            // Defer markdown styling to avoid layout recursion
+            DispatchQueue.main.async {
+                textView.applyMarkdownStyling()
+            }
         }
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
