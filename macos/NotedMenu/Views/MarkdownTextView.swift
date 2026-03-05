@@ -23,7 +23,7 @@ struct MarkdownTextView: NSViewRepresentable {
         textView.isEditable = isEditable
         textView.isSelectable = true
         textView.allowsUndo = true
-        textView.isRichText = false
+        textView.isRichText = true  // Required for attributed string styling
         textView.importsGraphics = false
         textView.usesFontPanel = false
         textView.usesRuler = false
@@ -147,6 +147,7 @@ class MarkdownNSTextView: NSTextView {
     var markdownFont: NSFont = .systemFont(ofSize: NSFont.systemFontSize)
     var markdownTextColor: NSColor = .labelColor
     var onCommit: (() -> Void)?
+    private var isApplyingStyling = false
 
     // Prevent drag and drop from inserting content
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
@@ -170,7 +171,10 @@ class MarkdownNSTextView: NSTextView {
     }
 
     func applyMarkdownStyling() {
-        guard let textStorage = textStorage else { return }
+        // Prevent re-entrant calls
+        guard !isApplyingStyling, let textStorage = textStorage else { return }
+        isApplyingStyling = true
+        defer { isApplyingStyling = false }
 
         // Preserve cursor position
         let savedRanges = selectedRanges
