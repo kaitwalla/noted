@@ -23,6 +23,7 @@ export interface Note {
   plain_text: string;
   is_todo: boolean;
   is_done: boolean;
+  is_public: boolean;
   reminder_at?: string;
   version: number;
   created_at: string;
@@ -30,6 +31,7 @@ export interface Note {
   deleted_at?: string;
   tags?: Tag[];
   tag_ids?: string[];
+  link_previews?: LinkPreview[];
 }
 
 export interface Tag {
@@ -52,6 +54,16 @@ export interface Image {
   url: string;
 }
 
+export interface LinkPreview {
+  id: string;
+  url: string;
+  title?: string;
+  description?: string;
+  image_url?: string;
+  favicon_url?: string;
+  site_name?: string;
+}
+
 export interface AuthResponse {
   user: User;
   access_token: string;
@@ -71,6 +83,7 @@ export interface UpdateNoteRequest {
   plain_text?: string;
   is_todo?: boolean;
   is_done?: boolean;
+  is_public?: boolean;
   reminder_at?: string;
   tag_ids?: string[];
 }

@@ -2,6 +2,22 @@ import { create } from 'zustand';
 import { api } from '../api/client';
 import type { User, Notebook, Note, Tag } from '../types';
 
+export type AppTheme = 'system' | 'warm-paper' | 'hacker' | 'retrowave';
+
+export interface ThemeOption {
+  id: AppTheme;
+  name: string;
+  description: string;
+  icon: string;
+}
+
+export const themeOptions: ThemeOption[] = [
+  { id: 'system', name: 'System', description: 'Follow system appearance', icon: '◐' },
+  { id: 'warm-paper', name: 'Warm Paper', description: 'Warm sepia tones', icon: '☀' },
+  { id: 'hacker', name: 'Hacker', description: 'Dark with green accents', icon: '⌨' },
+  { id: 'retrowave', name: 'Retrowave', description: 'Neon purple & cyan', icon: '✦' },
+];
+
 interface AppState {
   // Auth
   user: User | null;
@@ -19,10 +35,14 @@ interface AppState {
   // Tags
   tags: Tag[];
 
+  // Theme
+  theme: AppTheme;
+
   // Actions
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
+  setTheme: (theme: AppTheme) => void;
 
   // Notebook actions
   fetchNotebooks: () => Promise<void>;
@@ -36,12 +56,39 @@ interface AppState {
   addNote: (notebookId: string, content: Record<string, unknown>, plainText: string, isTodo?: boolean, tagIds?: string[], reminderAt?: string) => Promise<Note>;
   updateNote: (noteId: string, updates: Partial<Note>) => Promise<void>;
   toggleNoteDone: (noteId: string) => Promise<void>;
+  toggleNotePublic: (noteId: string) => Promise<void>;
   removeNote: (noteId: string) => Promise<void>;
+
+  // URL sync helpers
+  selectNotebookById: (notebookId: string) => void;
+  selectNoteByTimestamp: (timestamp: string) => void;
 
   // Tag actions
   fetchTags: () => Promise<void>;
   addTag: (name: string, color?: string) => Promise<Tag>;
   removeTag: (id: string) => Promise<void>;
+}
+
+// Get saved theme from localStorage
+const getSavedTheme = (): AppTheme => {
+  if (typeof window === 'undefined') return 'system';
+  const saved = localStorage.getItem('noted-theme');
+  if (saved && ['system', 'warm-paper', 'hacker', 'retrowave'].includes(saved)) {
+    return saved as AppTheme;
+  }
+  return 'system';
+};
+
+// Apply theme to document
+const applyTheme = (theme: AppTheme) => {
+  if (typeof document === 'undefined') return;
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('noted-theme', theme);
+};
+
+// Initialize theme on load
+if (typeof window !== 'undefined') {
+  applyTheme(getSavedTheme());
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -54,10 +101,15 @@ export const useStore = create<AppState>((set, get) => ({
   notes: [],
   selectedNoteId: null,
   tags: [],
+  theme: getSavedTheme(),
 
   // Auth actions
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setLoading: (isLoading) => set({ isLoading }),
+  setTheme: (theme) => {
+    applyTheme(theme);
+    set({ theme });
+  },
   logout: () => {
     api.clearTokens();
     set({
@@ -135,6 +187,7 @@ export const useStore = create<AppState>((set, get) => ({
       plain_text: updates.plain_text,
       is_todo: updates.is_todo,
       is_done: updates.is_done,
+      is_public: updates.is_public,
       tag_ids: updates.tag_ids,
       reminder_at: updates.reminder_at,
     });
@@ -153,12 +206,44 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  toggleNotePublic: async (noteId) => {
+    const note = get().notes.find((n) => n.id === noteId);
+    if (note) {
+      const updated = await api.updateNote(noteId, { is_public: !note.is_public });
+      set((state) => ({
+        notes: state.notes.map((n) => (n.id === noteId ? updated : n)),
+      }));
+    }
+  },
+
   removeNote: async (noteId) => {
     await api.deleteNote(noteId);
     set((state) => ({
       notes: state.notes.filter((n) => n.id !== noteId),
       selectedNoteId: state.selectedNoteId === noteId ? null : state.selectedNoteId,
     }));
+  },
+
+  // URL sync helpers
+  selectNotebookById: (notebookId) => {
+    const notebooks = get().notebooks;
+    const notebook = notebooks.find((n) => n.id === notebookId);
+    if (notebook) {
+      get().selectNotebook(notebookId);
+    }
+  },
+
+  selectNoteByTimestamp: (timestamp) => {
+    const notes = get().notes;
+    // timestamp format: YYYYMMDD-HHmmss
+    const note = notes.find((n) => {
+      const d = new Date(n.created_at);
+      const noteTimestamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}${String(d.getSeconds()).padStart(2, '0')}`;
+      return noteTimestamp === timestamp;
+    });
+    if (note) {
+      set({ selectedNoteId: note.id });
+    }
   },
 
   // Tag actions
