@@ -2,7 +2,7 @@ import Foundation
 import Carbon
 import AppKit
 
-final class HotkeyManager {
+final class HotkeyManager: ObservableObject {
     static let shared = HotkeyManager()
 
     // Quick Note hotkey
