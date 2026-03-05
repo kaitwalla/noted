@@ -78,7 +78,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
     content?: TiptapNode[];
     text?: string;
     marks?: TiptapMark[];
-    attrs?: { src?: string; alt?: string };
+    attrs?: { src?: string; alt?: string; level?: number; checked?: boolean };
   }
 
   const renderTextWithMarks = (text: string, marks: TiptapMark[] | undefined, key: number): React.ReactNode => {
@@ -116,38 +116,96 @@ export function NoteBubble({ note }: NoteBubbleProps) {
     // Try to extract text content from the Tiptap JSON
     if (note.content && typeof note.content === 'object') {
       const content = note.content as { content?: TiptapNode[] };
-      const elements: React.ReactNode[] = [];
-      let key = 0;
+      let keyCounter = 0;
 
-      const extractNodes = (nodes: TiptapNode[] | undefined): void => {
-        if (!nodes) return;
-        for (const node of nodes) {
-          if (node.type === 'codeBlock') {
-            // Extract text from code block content
+      const renderNode = (node: TiptapNode): React.ReactNode => {
+        const key = keyCounter++;
+
+        switch (node.type) {
+          case 'heading': {
+            const level = node.attrs?.level || 1;
+            const children = node.content?.map(renderNode);
+            const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
+            return <HeadingTag key={key} className="note-heading">{children}</HeadingTag>;
+          }
+
+          case 'paragraph': {
+            const children = node.content?.map(renderNode);
+            return <p key={key}>{children}</p>;
+          }
+
+          case 'bulletList': {
+            const items = node.content?.map(renderNode);
+            return <ul key={key}>{items}</ul>;
+          }
+
+          case 'orderedList': {
+            const items = node.content?.map(renderNode);
+            return <ol key={key}>{items}</ol>;
+          }
+
+          case 'listItem': {
+            const children = node.content?.map(renderNode);
+            return <li key={key}>{children}</li>;
+          }
+
+          case 'taskList': {
+            const items = node.content?.map(renderNode);
+            return <ul key={key} className="task-list">{items}</ul>;
+          }
+
+          case 'taskItem': {
+            const checked = node.attrs?.checked || false;
+            const children = node.content?.map(renderNode);
+            return (
+              <li key={key} className={`task-item ${checked ? 'checked' : ''}`}>
+                <span className="task-checkbox">{checked ? '☑' : '☐'}</span>
+                {children}
+              </li>
+            );
+          }
+
+          case 'codeBlock': {
             const codeText = node.content?.map(n => n.text || '').join('') || '';
-            elements.push(
-              <pre key={key++} className="code-block">
+            return (
+              <pre key={key} className="code-block">
                 <code>{codeText}</code>
               </pre>
             );
-          } else if (node.text) {
-            elements.push(renderTextWithMarks(node.text, node.marks, key++));
-          } else if (node.content) {
-            extractNodes(node.content);
           }
-          if (node.type === 'paragraph' && elements.length > 0) {
-            elements.push(<br key={key++} />);
+
+          case 'blockquote': {
+            const children = node.content?.map(renderNode);
+            return <blockquote key={key}>{children}</blockquote>;
+          }
+
+          case 'horizontalRule': {
+            return <hr key={key} />;
+          }
+
+          case 'text': {
+            return renderTextWithMarks(node.text || '', node.marks, key);
+          }
+
+          default: {
+            // For text nodes without explicit type
+            if (node.text) {
+              return renderTextWithMarks(node.text, node.marks, key);
+            }
+            // Recursively render content for unknown node types
+            if (node.content) {
+              return <span key={key}>{node.content.map(renderNode)}</span>;
+            }
+            return null;
           }
         }
       };
 
-      extractNodes(content.content);
-      if (elements.length > 0) {
-        // Remove trailing <br>
-        if (elements[elements.length - 1]?.toString().includes('br')) {
-          elements.pop();
+      if (content.content && content.content.length > 0) {
+        const elements = content.content.map(renderNode).filter(Boolean);
+        if (elements.length > 0) {
+          return <div className="rendered-content">{elements}</div>;
         }
-        return <>{elements}</>;
       }
     }
     // Don't show "(image)" placeholder if we have images
@@ -165,10 +223,8 @@ export function NoteBubble({ note }: NoteBubbleProps) {
             {note.is_done ? <Check size={16} /> : <Circle size={16} />}
           </button>
         )}
-        <div className="note-content">
-          {renderContent() && (
-            <p className={note.is_done ? 'strikethrough' : ''}>{renderContent()}</p>
-          )}
+        <div className={`note-content ${note.is_done ? 'strikethrough' : ''}`}>
+          {renderContent()}
           {images.length > 0 && (
             <div className="note-images">
               {images.map((img) => (
