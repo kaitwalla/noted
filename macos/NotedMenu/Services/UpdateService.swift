@@ -4,7 +4,7 @@ import Sparkle
 
 /// Manages app updates using Sparkle framework
 @MainActor
-final class UpdateService: NSObject, ObservableObject, SPUStandardUserDriverDelegate {
+final class UpdateService: NSObject, ObservableObject {
     static let shared = UpdateService()
 
     /// The Sparkle updater controller
@@ -32,11 +32,11 @@ final class UpdateService: NSObject, ObservableObject, SPUStandardUserDriverDele
     private override init() {
         super.init()
 
-        // Initialize Sparkle updater with self as user driver delegate for gentle reminders
+        // Initialize Sparkle updater
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,
-            userDriverDelegate: self
+            userDriverDelegate: nil
         )
 
         // Sync initial state
@@ -51,23 +51,6 @@ final class UpdateService: NSObject, ObservableObject, SPUStandardUserDriverDele
         updaterController.updater.publisher(for: \.lastUpdateCheckDate)
             .receive(on: DispatchQueue.main)
             .assign(to: &$lastUpdateCheckDate)
-    }
-
-    // MARK: - SPUStandardUserDriverDelegate
-
-    /// Enable gentle reminders for background app
-    var supportsGentleScheduledUpdateReminders: Bool {
-        return true
-    }
-
-    /// Handle gentle update reminder - show in menu bar or notification
-    nonisolated func standardUserDriverWillHandleShowingUpdate(_ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState) {
-        // For background apps, we can show a gentle reminder
-        // The standard driver will handle showing the update UI
-    }
-
-    nonisolated func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
-        // User acknowledged the update
     }
 
     /// Check for updates (user-initiated)
