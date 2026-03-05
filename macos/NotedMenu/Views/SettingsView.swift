@@ -5,8 +5,10 @@ import Carbon
 struct SettingsView: View {
     @EnvironmentObject var appViewModel: AppViewModel
     @ObservedObject var themeManager = ThemeManager.shared
+    @StateObject private var updateService = UpdateService.shared
     @Environment(\.dismiss) var dismiss
     @Environment(\.themeColors) var themeColors
+    var onDismiss: (() -> Void)?
 
     @State private var launchAtLogin = false
     @State private var selectedNotebookId: String = ""
@@ -122,6 +124,55 @@ struct SettingsView: View {
                             }
                     }
 
+                    // Updates
+                    settingsSection("Updates") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Current version info
+                            HStack {
+                                Text("Version:")
+                                    .foregroundColor(themeColors.text)
+                                Spacer()
+                                Text("\(updateService.currentVersion) (Build \(updateService.currentBuild))")
+                                    .foregroundColor(themeColors.secondaryText)
+                            }
+
+                            Divider()
+
+                            // Auto-check toggle
+                            Toggle("Check for updates automatically", isOn: $updateService.automaticallyChecksForUpdates)
+                                .toggleStyle(.switch)
+                                .foregroundColor(themeColors.text)
+
+                            // Check for updates button
+                            HStack {
+                                Button {
+                                    updateService.checkForUpdates()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                        Text("Check for Updates...")
+                                    }
+                                    .foregroundColor(themeColors.accent)
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(!updateService.canCheckForUpdates)
+
+                                Spacer()
+                            }
+
+                            // Last check info
+                            if let lastCheck = updateService.lastUpdateCheckDate {
+                                Text("Last checked: \(lastCheck.formatted(.relative(presentation: .named)))")
+                                    .font(.caption)
+                                    .foregroundColor(themeColors.secondaryText)
+                            }
+
+                            Text("Updates are downloaded and installed automatically when available.")
+                                .font(.caption)
+                                .foregroundColor(themeColors.secondaryText)
+                        }
+                    }
+
                     // API URL
                     settingsSection("Server") {
                         TextField("API URL", text: $apiURL)
@@ -147,7 +198,11 @@ struct SettingsView: View {
             HStack {
                 Spacer()
                 Button {
-                    dismiss()
+                    if let onDismiss = onDismiss {
+                        onDismiss()
+                    } else {
+                        dismiss()
+                    }
                 } label: {
                     Text("Done")
                         .fontWeight(.medium)
@@ -161,7 +216,7 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 400, height: 580)
+        .frame(width: 400, height: 650)
         .background(themeColors.background)
         .onAppear {
             selectedNotebookId = appViewModel.defaultNotebookId

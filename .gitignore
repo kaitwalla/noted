@@ -40,3 +40,10 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Sparkle signing keys (KEEP PRIVATE!)
+.sparkle-keys/
+*.sparkle-private-key
+
+# macOS app releases
+macos/releases/

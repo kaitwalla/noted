@@ -71,6 +71,23 @@ func (s *Server) setupRoutes() {
 	r.Post("/api/update", s.handleUpdate)
 	r.Get("/api/update/status", s.handleUpdateStatus)
 
+	// App update routes (public, rate-limited)
+	r.Group(func(r chi.Router) {
+		r.Use(s.publicLimiter.Middleware)
+		r.Get("/api/app/updates/{platform}", s.handleGetAppUpdate)
+		r.Get("/api/app/info", s.handleGetAppInfo)
+	})
+
+	// Sparkle appcast for macOS auto-updates (public, rate-limited)
+	r.Group(func(r chi.Router) {
+		r.Use(s.publicLimiter.Middleware)
+		r.Get("/appcast/macos.xml", s.handleSparkleAppcast)
+	})
+
+	// Admin endpoints for managing app releases (requires UPDATE_SECRET)
+	r.Post("/api/admin/releases", s.handleUpdateRelease)
+	r.Get("/api/admin/releases", s.handleGetRelease)
+
 	// API routes
 	r.Route("/api", func(r chi.Router) {
 		// Public image access (supports signed URLs OR JWT auth)
