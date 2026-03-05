@@ -23,7 +23,7 @@ struct MarkdownTextView: NSViewRepresentable {
         textView.isEditable = isEditable
         textView.isSelectable = true
         textView.allowsUndo = true
-        textView.isRichText = true  // Required for attributed string styling
+        textView.isRichText = false
         textView.importsGraphics = false
         textView.usesFontPanel = false
         textView.usesRuler = false
@@ -56,10 +56,7 @@ struct MarkdownTextView: NSViewRepresentable {
         // Set initial text
         if !text.isEmpty {
             textView.string = text
-            // Defer styling to avoid layout recursion during initial setup
-            DispatchQueue.main.async {
-                textView.applyMarkdownStyling()
-            }
+            textView.applyMarkdownStyling()
         }
 
         return scrollView
@@ -77,21 +74,8 @@ struct MarkdownTextView: NSViewRepresentable {
         if textView.string != text {
             let selectedRanges = textView.selectedRanges
             textView.string = text
-            // Defer styling to avoid layout recursion
-            DispatchQueue.main.async {
-                textView.applyMarkdownStyling()
-                // Restore selection after styling
-                let newLength = textView.textStorage?.length ?? 0
-                let validRanges = selectedRanges.compactMap { rangeValue -> NSValue? in
-                    let range = rangeValue.rangeValue
-                    let location = min(range.location, newLength)
-                    let length = min(range.length, newLength - location)
-                    return NSValue(range: NSRange(location: location, length: length))
-                }
-                if !validRanges.isEmpty {
-                    textView.selectedRanges = validRanges
-                }
-            }
+            textView.applyMarkdownStyling()
+            textView.selectedRanges = selectedRanges
         }
 
         // Focus handling - trigger when focusTrigger changes
@@ -123,10 +107,8 @@ struct MarkdownTextView: NSViewRepresentable {
             // Update binding
             parent.text = textView.string
 
-            // Defer markdown styling to avoid layout recursion
-            DispatchQueue.main.async {
-                textView.applyMarkdownStyling()
-            }
+            // Apply markdown styling
+            textView.applyMarkdownStyling()
         }
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
@@ -147,7 +129,6 @@ class MarkdownNSTextView: NSTextView {
     var markdownFont: NSFont = .systemFont(ofSize: NSFont.systemFontSize)
     var markdownTextColor: NSColor = .labelColor
     var onCommit: (() -> Void)?
-    private var isApplyingStyling = false
 
     // Prevent drag and drop from inserting content
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
@@ -171,10 +152,7 @@ class MarkdownNSTextView: NSTextView {
     }
 
     func applyMarkdownStyling() {
-        // Prevent re-entrant calls
-        guard !isApplyingStyling, let textStorage = textStorage else { return }
-        isApplyingStyling = true
-        defer { isApplyingStyling = false }
+        guard let textStorage = textStorage else { return }
 
         // Preserve cursor position
         let savedRanges = selectedRanges

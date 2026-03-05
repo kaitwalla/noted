@@ -352,15 +352,17 @@ struct NoteEditView: View {
             }
 
             // Text editor
-            TextEditor(text: $text)
-                .font(.body)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 120, maxHeight: 200)
-                .padding(8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(themeColors.tertiaryBackground)
-                )
+            MarkdownTextView(
+                text: $text,
+                font: .systemFont(ofSize: NSFont.systemFontSize),
+                textColor: themeColors.nsText
+            )
+            .frame(minHeight: 120, maxHeight: 200)
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(themeColors.tertiaryBackground)
+            )
 
             // Actions
             HStack {

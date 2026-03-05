@@ -68,66 +68,9 @@ enum MarkdownParser {
         baseFont: Font = .body,
         textColor: Color = .primary
     ) -> AttributedString {
-        var result = AttributedString()
-        let lines = text.components(separatedBy: "\n")
-
-        for (index, line) in lines.enumerated() {
-            var lineAttr: AttributedString
-
-            // Check for headers
-            if line.hasPrefix("### ") {
-                let content = String(line.dropFirst(4))
-                lineAttr = parseInlineMarkdown(content, baseFont: .headline, textColor: textColor)
-            } else if line.hasPrefix("## ") {
-                let content = String(line.dropFirst(3))
-                lineAttr = parseInlineMarkdown(content, baseFont: .title3.bold(), textColor: textColor)
-            } else if line.hasPrefix("# ") {
-                let content = String(line.dropFirst(2))
-                lineAttr = parseInlineMarkdown(content, baseFont: .title2.bold(), textColor: textColor)
-            } else if line.hasPrefix("- [ ] ") || line.hasPrefix("- [x] ") || line.hasPrefix("- [X] ") {
-                // Task list items
-                let isChecked = line.hasPrefix("- [x] ") || line.hasPrefix("- [X] ")
-                let content = String(line.dropFirst(6))
-                let checkbox = isChecked ? "☑ " : "☐ "
-                var checkboxAttr = AttributedString(checkbox)
-                checkboxAttr.font = baseFont
-                checkboxAttr.foregroundColor = isChecked ? .secondary : textColor
-                var contentAttr = parseInlineMarkdown(content, baseFont: baseFont, textColor: isChecked ? .secondary : textColor)
-                if isChecked {
-                    contentAttr.strikethroughStyle = .single
-                }
-                lineAttr = checkboxAttr + contentAttr
-            } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
-                // Bullet list items
-                let content = String(line.dropFirst(2))
-                var bulletAttr = AttributedString("• ")
-                bulletAttr.font = baseFont
-                bulletAttr.foregroundColor = textColor
-                lineAttr = bulletAttr + parseInlineMarkdown(content, baseFont: baseFont, textColor: textColor)
-            } else {
-                // Regular line - parse inline markdown
-                lineAttr = parseInlineMarkdown(line, baseFont: baseFont, textColor: textColor)
-            }
-
-            result.append(lineAttr)
-
-            // Add newline between lines (except after last)
-            if index < lines.count - 1 {
-                result.append(AttributedString("\n"))
-            }
-        }
-
-        return result
-    }
-
-    /// Parse inline markdown (bold, italic, code, strikethrough, links)
-    private static func parseInlineMarkdown(
-        _ text: String,
-        baseFont: Font,
-        textColor: Color
-    ) -> AttributedString {
         do {
             var attributed = try AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
+            // Apply base styling to the entire string
             attributed.font = baseFont
             attributed.foregroundColor = textColor
             return attributed

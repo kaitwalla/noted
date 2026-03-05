@@ -14,6 +14,7 @@ struct NoteInputView: View {
     @State private var isSending = false
     @State private var isDragging = false
     @State private var error: String?
+    @State private var focusTrigger: UUID? = nil
 
     var body: some View {
         VStack(spacing: 8) {
@@ -82,22 +83,21 @@ struct NoteInputView: View {
                     return true
                 }
 
-                // Text input
-                TextField("Write a note...", text: $noteText)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 13))
-                    .frame(height: 36)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(themeColors.tertiaryBackground)
-                    )
-                    .onSubmit {
-                        if NSEvent.modifierFlags.contains(.command) {
-                            sendNote()
-                        }
-                    }
+                // Text input with markdown
+                MarkdownTextView(
+                    text: $noteText,
+                    font: .systemFont(ofSize: 13),
+                    textColor: themeColors.nsText,
+                    focusTrigger: focusTrigger,
+                    onCommit: sendNote
+                )
+                .frame(height: 36)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(themeColors.tertiaryBackground)
+                )
 
                 // Send button
                 Button {
@@ -202,6 +202,8 @@ struct NoteInputView: View {
                 pendingImages.append(PendingImage(image: image, data: data))
             }
         }
+        // Restore focus to text input after adding images
+        focusTrigger = UUID()
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
