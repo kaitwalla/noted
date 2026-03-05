@@ -66,22 +66,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
 
         // Open Notebooks
-        let openItem = NSMenuItem(title: "Open Notebooks", action: #selector(openNotebooks), keyEquivalent: "o")
-        openItem.keyEquivalentModifierMask = [.command]
+        let openItem = NSMenuItem(title: "Open Notebooks", action: #selector(openNotebooks), keyEquivalent: "")
         openItem.target = self
         menu.addItem(openItem)
 
         // Quick Note
-        let quickNoteItem = NSMenuItem(title: "Quick Note", action: #selector(showQuickNote), keyEquivalent: "n")
-        quickNoteItem.keyEquivalentModifierMask = [.command]
+        let quickNoteItem = NSMenuItem(title: "Quick Note", action: #selector(showQuickNote), keyEquivalent: "")
         quickNoteItem.target = self
         menu.addItem(quickNoteItem)
 
         menu.addItem(NSMenuItem.separator())
 
         // Settings
-        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ",")
-        settingsItem.keyEquivalentModifierMask = [.command]
+        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: "")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
@@ -93,8 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
 
         // Quit
-        let quitItem = NSMenuItem(title: "Quit Noted", action: #selector(quitApp), keyEquivalent: "q")
-        quitItem.keyEquivalentModifierMask = [.command]
+        let quitItem = NSMenuItem(title: "Quit Noted", action: #selector(quitApp), keyEquivalent: "")
         quitItem.target = self
         menu.addItem(quitItem)
 

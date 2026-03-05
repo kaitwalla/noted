@@ -91,6 +91,8 @@ class MainPanelController: NSObject {
                 }
 
                 panel.setFrame(newFrame, display: true)
+                panel.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
             } else {
                 setDefaultFrame(for: panel, in: screenRect)
             }
