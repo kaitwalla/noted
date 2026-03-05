@@ -161,6 +161,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Actions
 
     private func openNotebooksAction() {
+        // If panel is already visible, toggle it closed
+        if MainPanelController.shared.isVisible {
+            MainPanelController.shared.hidePanel()
+            return
+        }
+
         // Navigate to default notebook if authenticated
         if appViewModel.isAuthenticated, let notebook = appViewModel.defaultNotebook {
             appViewModel.openNoteStream(for: notebook)
