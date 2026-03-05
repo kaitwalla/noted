@@ -133,6 +133,7 @@ func (s *Server) setupRoutes() {
 
 			// Notes
 			r.Route("/notes", func(r chi.Router) {
+				r.Get("/", s.handleListAllNotes)
 				r.Get("/{id}", s.handleGetNote)
 				r.Put("/{id}", s.handleUpdateNote)
 				r.Delete("/{id}", s.handleDeleteNote)

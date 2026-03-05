@@ -30,6 +30,7 @@ private enum DateFormatters {
 struct NoteBubbleView: View {
     let note: Note
     let images: [NoteImage]
+    var onCheckboxToggle: ((String) -> Void)?
 
     @Environment(\.themeColors) var themeColors
     @State private var loadedImages: [UUID: NSImage] = [:]
@@ -46,16 +47,14 @@ struct NoteBubbleView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    // Note content with markdown
+                    // Note content with markdown (interactive checkboxes)
                     if !note.plainText.isEmpty && note.plainText != "[image]" {
-                        Text(MarkdownParser.swiftUIAttributedString(
-                            from: note.plainText,
-                            baseFont: .body,
-                            textColor: Color(note.isDone ? themeColors.secondaryText : themeColors.text)
-                        ))
-                            .strikethrough(note.isDone)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
+                        MarkdownContentView(
+                            text: note.plainText,
+                            textColor: Color(note.isDone ? themeColors.secondaryText : themeColors.text),
+                            onCheckboxToggle: onCheckboxToggle
+                        )
+                        .strikethrough(note.isDone)
                     }
 
                     // Images

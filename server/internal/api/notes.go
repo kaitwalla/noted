@@ -162,6 +162,44 @@ func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusCreated, note)
 }
 
+func (s *Server) handleListAllNotes(w http.ResponseWriter, r *http.Request) {
+	userID, ok := GetUserID(r.Context())
+	if !ok {
+		respondError(w, http.StatusUnauthorized, "unauthorized", "user not found in context")
+		return
+	}
+
+	var since *time.Time
+	if sinceStr := r.URL.Query().Get("since"); sinceStr != "" {
+		t, err := time.Parse(time.RFC3339, sinceStr)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid_request", "invalid 'since' parameter, expected RFC3339 format")
+			return
+		}
+		since = &t
+	}
+
+	notes, err := s.store.GetNotesByUserID(r.Context(), userID, since)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "server_error", "failed to get notes")
+		return
+	}
+
+	for i := range notes {
+		tags, err := s.store.GetTagsForNote(r.Context(), notes[i].ID)
+		if err == nil {
+			notes[i].Tags = tags
+		}
+		s.loadNoteLinkPreviews(r.Context(), &notes[i])
+	}
+
+	if notes == nil {
+		notes = []models.Note{}
+	}
+
+	respondJSON(w, http.StatusOK, notes)
+}
+
 func (s *Server) handleGetNote(w http.ResponseWriter, r *http.Request) {
 	userID, ok := GetUserID(r.Context())
 	if !ok {

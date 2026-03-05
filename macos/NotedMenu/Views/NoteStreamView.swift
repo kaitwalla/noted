@@ -9,14 +9,25 @@ struct NoteStreamView: View {
 
     @State private var notes: [Note] = []
     @State private var noteImages: [UUID: [NoteImage]] = [:]
+    @State private var noteSyncStatus: [UUID: SyncStatus] = [:]
     @State private var isLoading = true
     @State private var error: String?
     @State private var editingNote: Note?
     @State private var editText: String = ""
     @State private var errorDismissTask: Task<Void, Never>?
+    @State private var conflictNote: LocalNote?
+    @State private var showingConflict = false
+
+    private let dataStore = LocalDataStore.shared
+    private let syncService = SyncService.shared
 
     var body: some View {
         VStack(spacing: 0) {
+            // Offline banner
+            if !appViewModel.isOnline {
+                offlineBanner
+            }
+
             // Header
             header
 
@@ -75,6 +86,47 @@ struct NoteStreamView: View {
         .task {
             await loadNotes()
         }
+        .sheet(isPresented: $showingConflict) {
+            if let note = conflictNote {
+                ConflictResolutionView(
+                    localNote: note,
+                    onResolve: { keepLocal in
+                        Task {
+                            await syncService.resolveConflict(noteId: note.id, keepLocal: keepLocal)
+                            await loadNotes()
+                        }
+                        showingConflict = false
+                        conflictNote = nil
+                    },
+                    onCancel: {
+                        showingConflict = false
+                        conflictNote = nil
+                    }
+                )
+                .themed()
+            }
+        }
+    }
+
+    private var offlineBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "wifi.slash")
+                .font(.caption)
+            Text("Offline - changes will sync when connected")
+                .font(.caption)
+            Spacer()
+            if appViewModel.pendingCount > 0 {
+                Text("\(appViewModel.pendingCount) pending")
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(themeColors.accent.opacity(0.2)))
+            }
+        }
+        .foregroundColor(themeColors.secondaryText)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(themeColors.tertiaryBackground)
     }
 
     private var header: some View {
@@ -107,6 +159,28 @@ struct NoteStreamView: View {
 
             Spacer()
 
+            // Sync status indicator
+            if appViewModel.isSyncing {
+                ProgressView()
+                    .scaleEffect(0.6)
+                    .help("Syncing...")
+            } else if appViewModel.hasConflicts {
+                Button {
+                    showFirstConflict()
+                } label: {
+                    Image(systemName: "exclamationmark.icloud")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+                .buttonStyle(.plain)
+                .help("Resolve conflicts")
+            } else if appViewModel.pendingCount > 0 {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(.caption)
+                    .foregroundColor(themeColors.secondaryText)
+                    .help("\(appViewModel.pendingCount) pending changes")
+            }
+
             Button {
                 Task { await loadNotes() }
             } label: {
@@ -122,16 +196,39 @@ struct NoteStreamView: View {
         .background(themeColors.background)
     }
 
+    private func showFirstConflict() {
+        do {
+            let conflicts = try dataStore.fetchConflictedNotes()
+            if let first = conflicts.first {
+                conflictNote = first
+                showingConflict = true
+            }
+        } catch {
+            showError(error.localizedDescription)
+        }
+    }
+
     private var notesList: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 8) {
                     // Notes are sorted newest first, so reverse for chronological display
                     ForEach(notes.reversed()) { note in
-                        NoteBubbleView(
-                            note: note,
-                            images: noteImages[note.id] ?? []
-                        )
+                        HStack(alignment: .top, spacing: 4) {
+                            NoteBubbleView(
+                                note: note,
+                                images: noteImages[note.id] ?? [],
+                                onCheckboxToggle: { newText in
+                                    Task { await updateNoteText(note: note, newText: newText) }
+                                }
+                            )
+
+                            // Sync status indicator for each note
+                            if let status = noteSyncStatus[note.id], status != .synced {
+                                SyncStatusIndicator(status: status)
+                                    .padding(.top, 4)
+                            }
+                        }
                         .id(note.id)
                         .contextMenu {
                             Button {
@@ -146,6 +243,16 @@ struct NoteStreamView: View {
                                 } label: {
                                     Label(note.isDone ? "Mark Incomplete" : "Mark Complete",
                                           systemImage: note.isDone ? "circle" : "checkmark.circle")
+                                }
+                            }
+
+                            // Show conflict resolution option if this note has a conflict
+                            if noteSyncStatus[note.id] == .conflict {
+                                Divider()
+                                Button {
+                                    showConflictForNote(note.id)
+                                } label: {
+                                    Label("Resolve Conflict", systemImage: "exclamationmark.triangle")
                                 }
                             }
 
@@ -189,6 +296,17 @@ struct NoteStreamView: View {
         }
     }
 
+    private func showConflictForNote(_ noteId: UUID) {
+        do {
+            if let localNote = try dataStore.fetchNote(id: noteId), localNote.syncStatus == .conflict {
+                conflictNote = localNote
+                showingConflict = true
+            }
+        } catch {
+            showError(error.localizedDescription)
+        }
+    }
+
     private func startEditing(_ note: Note) {
         editText = note.plainText
         editingNote = note
@@ -196,16 +314,28 @@ struct NoteStreamView: View {
 
     private func saveEdit(note: Note, newText: String) async {
         do {
-            let updated = try await APIService.shared.updateNote(
-                noteId: note.id,
+            // Update locally first
+            if let updatedLocal = try dataStore.updateLocalNote(
+                id: note.id,
                 plainText: newText,
                 isTodo: note.isTodo,
                 isDone: note.isDone
-            )
-            if let index = notes.firstIndex(where: { $0.id == note.id }) {
-                notes[index] = updated
+            ) {
+                let updatedNote = Note(from: updatedLocal)
+                if let index = notes.firstIndex(where: { $0.id == note.id }) {
+                    notes[index] = updatedNote
+                }
+                noteSyncStatus[note.id] = updatedLocal.syncStatus
             }
+
             editingNote = nil
+
+            // Try to sync if online
+            if appViewModel.isOnline {
+                await syncService.syncNote(id: note.id)
+                // Reload to get server version
+                loadNotesFromLocal()
+            }
         } catch {
             showError(error.localizedDescription)
         }
@@ -213,14 +343,50 @@ struct NoteStreamView: View {
 
     private func toggleTodo(_ note: Note) async {
         do {
-            let updated = try await APIService.shared.updateNote(
-                noteId: note.id,
+            // Update locally first
+            if let updatedLocal = try dataStore.updateLocalNote(
+                id: note.id,
                 plainText: note.plainText,
                 isTodo: note.isTodo,
                 isDone: !note.isDone
-            )
-            if let index = notes.firstIndex(where: { $0.id == note.id }) {
-                notes[index] = updated
+            ) {
+                let updatedNote = Note(from: updatedLocal)
+                if let index = notes.firstIndex(where: { $0.id == note.id }) {
+                    notes[index] = updatedNote
+                }
+                noteSyncStatus[note.id] = updatedLocal.syncStatus
+            }
+
+            // Try to sync if online
+            if appViewModel.isOnline {
+                await syncService.syncNote(id: note.id)
+                loadNotesFromLocal()
+            }
+        } catch {
+            showError(error.localizedDescription)
+        }
+    }
+
+    private func updateNoteText(note: Note, newText: String) async {
+        do {
+            // Update locally first
+            if let updatedLocal = try dataStore.updateLocalNote(
+                id: note.id,
+                plainText: newText,
+                isTodo: note.isTodo,
+                isDone: note.isDone
+            ) {
+                let updatedNote = Note(from: updatedLocal)
+                if let index = notes.firstIndex(where: { $0.id == note.id }) {
+                    notes[index] = updatedNote
+                }
+                noteSyncStatus[note.id] = updatedLocal.syncStatus
+            }
+
+            // Try to sync if online
+            if appViewModel.isOnline {
+                await syncService.syncNote(id: note.id)
+                loadNotesFromLocal()
             }
         } catch {
             showError(error.localizedDescription)
@@ -229,8 +395,15 @@ struct NoteStreamView: View {
 
     private func deleteNote(_ note: Note) async {
         do {
-            try await APIService.shared.deleteNote(noteId: note.id)
+            // Delete locally first (marks as pending delete if synced)
+            try dataStore.deleteNote(id: note.id)
             notes.removeAll { $0.id == note.id }
+            noteSyncStatus.removeValue(forKey: note.id)
+
+            // Try to sync deletion if online
+            if appViewModel.isOnline {
+                await syncService.syncNote(id: note.id)
+            }
         } catch {
             showError(error.localizedDescription)
         }
@@ -240,8 +413,25 @@ struct NoteStreamView: View {
         isLoading = notes.isEmpty
         error = nil
 
+        // First load from local storage for instant UI
+        loadNotesFromLocal()
+
+        // Then try to fetch from server if online
+        guard appViewModel.isOnline else {
+            isLoading = false
+            return
+        }
+
         do {
-            notes = try await APIService.shared.getNotes(notebookId: notebook.id)
+            let serverNotes = try await APIService.shared.getNotes(notebookId: notebook.id)
+
+            // Save to local storage and update UI
+            for note in serverNotes {
+                try dataStore.saveNote(note, syncStatus: .synced)
+            }
+
+            // Reload from local to get consistent state
+            loadNotesFromLocal()
 
             // Load images in parallel using TaskGroup
             await withTaskGroup(of: (UUID, [NoteImage]).self) { group in
@@ -249,6 +439,10 @@ struct NoteStreamView: View {
                     group.addTask {
                         do {
                             let images = try await APIService.shared.getNoteImages(noteId: note.id)
+                            // Save to local storage
+                            for image in images {
+                                try? await LocalDataStore.shared.saveNoteImage(image)
+                            }
                             return (note.id, images)
                         } catch {
                             // Return empty array on failure - don't abort other loads
@@ -264,8 +458,31 @@ struct NoteStreamView: View {
 
             isLoading = false
         } catch {
-            showError(error.localizedDescription)
+            // If we have local data, don't show error
+            if notes.isEmpty {
+                showError(error.localizedDescription)
+            }
             isLoading = false
+        }
+    }
+
+    private func loadNotesFromLocal() {
+        do {
+            let localNotes = try dataStore.fetchNotes(notebookId: notebook.id)
+
+            // Convert to Note and track sync status
+            notes = localNotes.map { Note(from: $0) }
+            noteSyncStatus = Dictionary(uniqueKeysWithValues: localNotes.map { ($0.id, $0.syncStatus) })
+
+            // Load local images
+            for localNote in localNotes {
+                let localImages = try dataStore.fetchImages(noteId: localNote.id)
+                noteImages[localNote.id] = localImages.map { NoteImage(from: $0) }
+            }
+
+            isLoading = false
+        } catch {
+            // Silently fail - will try server
         }
     }
 

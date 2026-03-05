@@ -19,13 +19,51 @@ struct SettingsView: View {
     @State private var notebookHotkeyDisplay: String = ""
     @State private var keyMonitor: Any?
     @State private var selectedMenuBarIcon: MenuBarIconStyle = .noteSwirl
+    @State private var showClearCacheConfirmation = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Settings")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(themeColors.text)
+        VStack(spacing: 0) {
+            // Header with close button
+            HStack {
+                Image(systemName: "gearshape.fill")
+                    .foregroundColor(themeColors.accent)
+                Text("Settings")
+                    .font(.headline)
+                    .foregroundColor(themeColors.text)
+
+                Spacer()
+
+                Button {
+                    if let onDismiss = onDismiss {
+                        onDismiss()
+                    } else {
+                        dismiss()
+                    }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(themeColors.secondaryText)
+                }
+                .buttonStyle(.plain)
+                .help("Close")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background {
+                // Hidden button to capture Esc key
+                Button("") {
+                    if let onDismiss = onDismiss {
+                        onDismiss()
+                    } else {
+                        dismiss()
+                    }
+                }
+                .keyboardShortcut(.escape, modifiers: [])
+                .opacity(0)
+            }
+
+            Divider()
+                .background(themeColors.border)
 
             ScrollView {
                 VStack(spacing: 16) {
@@ -176,7 +214,15 @@ struct SettingsView: View {
                     // API URL
                     settingsSection("Server") {
                         TextField("API URL", text: $apiURL)
-                            .textFieldStyle(.roundedBorder)
+                            .textFieldStyle(.plain)
+                            .padding(8)
+                            .background(themeColors.tertiaryBackground)
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(themeColors.border, lineWidth: 1)
+                            )
+                            .foregroundColor(themeColors.text)
                             .onSubmit {
                                 saveAPIURL()
                             }
@@ -191,33 +237,106 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundColor(themeColors.accent)
                     }
-                }
-                .padding(.horizontal, 4)
-            }
 
-            HStack {
-                Spacer()
-                Button {
-                    if let onDismiss = onDismiss {
-                        onDismiss()
-                    } else {
-                        dismiss()
+                    // Sync Status
+                    settingsSection("Sync") {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Connection status
+                            HStack {
+                                Image(systemName: appViewModel.isOnline ? "wifi" : "wifi.slash")
+                                    .foregroundColor(appViewModel.isOnline ? .green : .orange)
+                                Text(appViewModel.isOnline ? "Online" : "Offline")
+                                    .foregroundColor(themeColors.text)
+                                Spacer()
+                                if appViewModel.isSyncing {
+                                    HStack(spacing: 4) {
+                                        ProgressView()
+                                            .scaleEffect(0.6)
+                                        Text("Syncing...")
+                                            .font(.caption)
+                                            .foregroundColor(themeColors.secondaryText)
+                                    }
+                                }
+                            }
+
+                            if appViewModel.pendingCount > 0 {
+                                HStack {
+                                    Image(systemName: "icloud.and.arrow.up")
+                                        .font(.caption)
+                                        .foregroundColor(themeColors.accent)
+                                    Text("\(appViewModel.pendingCount) changes pending sync")
+                                        .font(.caption)
+                                        .foregroundColor(themeColors.secondaryText)
+                                }
+                            }
+
+                            if appViewModel.hasConflicts {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .font(.caption)
+                                        .foregroundColor(.orange)
+                                    Text("Some notes have conflicts")
+                                        .font(.caption)
+                                        .foregroundColor(.orange)
+                                }
+                            }
+
+                            Divider()
+
+                            // Cache info
+                            HStack {
+                                Text("Image Cache:")
+                                    .foregroundColor(themeColors.text)
+                                Spacer()
+                                Text(ImageCacheService.shared.getFormattedCacheSize())
+                                    .foregroundColor(themeColors.secondaryText)
+                            }
+
+                            HStack(spacing: 12) {
+                                Button {
+                                    Task {
+                                        await appViewModel.triggerSync()
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "arrow.triangle.2.circlepath")
+                                        Text("Sync Now")
+                                    }
+                                    .foregroundColor(themeColors.accent)
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(!appViewModel.isOnline || appViewModel.isSyncing)
+
+                                Button {
+                                    showClearCacheConfirmation = true
+                                } label: {
+                                    Text("Clear Cache")
+                                        .foregroundColor(themeColors.accent)
+                                }
+                                .buttonStyle(.borderless)
+                                .alert("Clear Image Cache?", isPresented: $showClearCacheConfirmation) {
+                                    Button("Cancel", role: .cancel) { }
+                                    Button("Clear", role: .destructive) {
+                                        ImageCacheService.shared.clearCache()
+                                    }
+                                } message: {
+                                    Text("This will remove all cached images. They will be re-downloaded as needed.")
+                                }
+                            }
+                        }
                     }
-                } label: {
-                    Text("Done")
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(themeColors.accent)
-                        .cornerRadius(6)
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
             }
         }
-        .padding(20)
         .frame(width: 400, height: 650)
         .background(themeColors.background)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(themeColors.border.opacity(0.5), lineWidth: 1)
+        )
         .onAppear {
             selectedNotebookId = appViewModel.defaultNotebookId
             launchAtLogin = SMAppService.mainApp.status == .enabled

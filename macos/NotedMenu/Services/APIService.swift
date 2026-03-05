@@ -22,6 +22,13 @@ final class APIService {
 
     static var defaultURL: String { defaultAPIURL }
 
+    /// Check if currently online (reads from NetworkMonitor)
+    /// Note: This is a best-effort check; actual requests may still fail due to network conditions
+    @MainActor
+    var isOnline: Bool {
+        NetworkMonitor.shared.isConnected
+    }
+
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -354,6 +361,19 @@ extension APIService {
         return notes
             .filter { $0.deletedAt == nil }
             .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Fetches notes updated since a given date
+    /// - Parameter since: The date to fetch updates from
+    /// - Returns: Array of notes updated since the given date (including deleted)
+    func getNotesUpdatedSince(_ since: Date) async throws -> [Note] {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let sinceString = formatter.string(from: since)
+        guard let encodedSince = sinceString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+            throw APIError.invalidResponse
+        }
+        return try await get("notes?since=\(encodedSince)")
     }
 
     /// Fetches all images for a note

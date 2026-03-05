@@ -9,6 +9,7 @@ enum APIError: LocalizedError {
     case unauthorized
     case notFound
     case serverError
+    case offline
 
     var errorDescription: String? {
         switch self {
@@ -28,7 +29,14 @@ enum APIError: LocalizedError {
             return "Resource not found"
         case .serverError:
             return "Server error. Please try again later."
+        case .offline:
+            return "No internet connection"
         }
+    }
+
+    var isOffline: Bool {
+        if case .offline = self { return true }
+        return false
     }
 }
 

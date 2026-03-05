@@ -34,6 +34,19 @@
 		A10000000000000000000028 /* MenuBarIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000028 /* MenuBarIconView.swift */; };
 		A10000000000000000000029 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000029 /* UpdateService.swift */; };
 		A10000000000000000000030 /* MainPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000030 /* MainPanel.swift */; };
+		A10000000000000000000031 /* MarkdownContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000031 /* MarkdownContentView.swift */; };
+		A10000000000000000000032 /* MenuPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000032 /* MenuPanel.swift */; };
+		A10000000000000000000040 /* LocalDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000040 /* LocalDataStore.swift */; };
+		A10000000000000000000041 /* LocalNote.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000041 /* LocalNote.swift */; };
+		A10000000000000000000042 /* LocalNotebook.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000042 /* LocalNotebook.swift */; };
+		A10000000000000000000043 /* LocalNoteImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000043 /* LocalNoteImage.swift */; };
+		A10000000000000000000044 /* SyncMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000044 /* SyncMetadata.swift */; };
+		A10000000000000000000045 /* SyncStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000045 /* SyncStatus.swift */; };
+		A10000000000000000000046 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000046 /* NetworkMonitor.swift */; };
+		A10000000000000000000047 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000047 /* SyncService.swift */; };
+		A10000000000000000000048 /* ImageCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000048 /* ImageCacheService.swift */; };
+		A10000000000000000000049 /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000049 /* SyncStatusIndicator.swift */; };
+		A10000000000000000000050 /* ConflictResolutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000050 /* ConflictResolutionView.swift */; };
 		C30000000000000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C20000000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -67,6 +80,19 @@
 		A20000000000000000000028 /* MenuBarIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconView.swift; sourceTree = "<group>"; };
 		A20000000000000000000029 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
 		A20000000000000000000030 /* MainPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPanel.swift; sourceTree = "<group>"; };
+		A20000000000000000000031 /* MarkdownContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000032 /* MenuPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuPanel.swift; sourceTree = "<group>"; };
+		A20000000000000000000040 /* LocalDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDataStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000041 /* LocalNote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNote.swift; sourceTree = "<group>"; };
+		A20000000000000000000042 /* LocalNotebook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNotebook.swift; sourceTree = "<group>"; };
+		A20000000000000000000043 /* LocalNoteImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalNoteImage.swift; sourceTree = "<group>"; };
+		A20000000000000000000044 /* SyncMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncMetadata.swift; sourceTree = "<group>"; };
+		A20000000000000000000045 /* SyncStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatus.swift; sourceTree = "<group>"; };
+		A20000000000000000000046 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		A20000000000000000000047 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		A20000000000000000000048 /* ImageCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheService.swift; sourceTree = "<group>"; };
+		A20000000000000000000049 /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
+		A20000000000000000000050 /* ConflictResolutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConflictResolutionView.swift; sourceTree = "<group>"; };
 		A30000000000000000000001 /* NotedMenu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotedMenu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -96,6 +122,7 @@
 				A20000000000000000000001 /* NotedMenuApp.swift */,
 				A20000000000000000000002 /* AppDelegate.swift */,
 				A50000000000000000000003 /* Models */,
+				A50000000000000000000012 /* Data */,
 				A50000000000000000000004 /* Services */,
 				A50000000000000000000005 /* Views */,
 				A50000000000000000000006 /* ViewModels */,
@@ -127,6 +154,9 @@
 				A20000000000000000000008 /* AuthService.swift */,
 				A20000000000000000000009 /* KeychainService.swift */,
 				A20000000000000000000029 /* UpdateService.swift */,
+				A20000000000000000000046 /* NetworkMonitor.swift */,
+				A20000000000000000000047 /* SyncService.swift */,
+				A20000000000000000000048 /* ImageCacheService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -136,14 +166,18 @@
 			children = (
 				A20000000000000000000011 /* QuickNotePanel.swift */,
 				A20000000000000000000030 /* MainPanel.swift */,
+				A20000000000000000000032 /* MenuPanel.swift */,
 				A20000000000000000000012 /* LoginView.swift */,
 				A20000000000000000000013 /* SettingsView.swift */,
 				A20000000000000000000022 /* MarkdownTextView.swift */,
+				A20000000000000000000031 /* MarkdownContentView.swift */,
 				A20000000000000000000023 /* NoteBubbleView.swift */,
 				A20000000000000000000024 /* NoteInputView.swift */,
 				A20000000000000000000025 /* NoteStreamView.swift */,
 				A20000000000000000000027 /* LinkPreviewCard.swift */,
 				A20000000000000000000028 /* MenuBarIconView.swift */,
+				A20000000000000000000049 /* SyncStatusIndicator.swift */,
+				A20000000000000000000050 /* ConflictResolutionView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -196,6 +230,27 @@
 				A20000000000000000000026 /* ThemeManager.swift */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000012 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000040 /* LocalDataStore.swift */,
+				A50000000000000000000013 /* Models */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		A50000000000000000000013 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000041 /* LocalNote.swift */,
+				A20000000000000000000042 /* LocalNotebook.swift */,
+				A20000000000000000000043 /* LocalNoteImage.swift */,
+				A20000000000000000000044 /* SyncMetadata.swift */,
+				A20000000000000000000045 /* SyncStatus.swift */,
+			);
+			path = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -299,6 +354,19 @@
 				A10000000000000000000028 /* MenuBarIconView.swift in Sources */,
 				A10000000000000000000029 /* UpdateService.swift in Sources */,
 				A10000000000000000000030 /* MainPanel.swift in Sources */,
+				A10000000000000000000031 /* MarkdownContentView.swift in Sources */,
+				A10000000000000000000032 /* MenuPanel.swift in Sources */,
+				A10000000000000000000040 /* LocalDataStore.swift in Sources */,
+				A10000000000000000000041 /* LocalNote.swift in Sources */,
+				A10000000000000000000042 /* LocalNotebook.swift in Sources */,
+				A10000000000000000000043 /* LocalNoteImage.swift in Sources */,
+				A10000000000000000000044 /* SyncMetadata.swift in Sources */,
+				A10000000000000000000045 /* SyncStatus.swift in Sources */,
+				A10000000000000000000046 /* NetworkMonitor.swift in Sources */,
+				A10000000000000000000047 /* SyncService.swift in Sources */,
+				A10000000000000000000048 /* ImageCacheService.swift in Sources */,
+				A10000000000000000000049 /* SyncStatusIndicator.swift in Sources */,
+				A10000000000000000000050 /* ConflictResolutionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

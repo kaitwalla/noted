@@ -1,17 +1,22 @@
 import AppKit
 import SwiftUI
 import Combine
+import os.log
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let appViewModel = AppViewModel()
-    private var themeCancellable: AnyCancellable?
     private var iconObserver: NSObjectProtocol?
+    private var pendingCountObserver: NSObjectProtocol?
+    private let logger = Logger(subsystem: "com.noted.NotedMenu", category: "AppDelegate")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide from dock
         NSApp.setActivationPolicy(.accessory)
+
+        // Initialize offline support infrastructure
+        initializeOfflineSupport()
 
         // Apply initial theme appearance
         ThemeManager.shared.updateAppearance()
@@ -26,16 +31,52 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         QuickNotePanelController.shared.setAppViewModel(appViewModel)
         MainPanelController.shared.setAppViewModel(appViewModel)
         SettingsPanelController.shared.setAppViewModel(appViewModel)
-
-        // Observe theme changes
-        themeCancellable = ThemeManager.shared.$currentTheme
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateMenu()
-            }
+        MenuPanelController.shared.setAppViewModel(appViewModel)
 
         // Initialize UpdateService (Sparkle will check for updates automatically based on Info.plist settings)
         _ = UpdateService.shared
+    }
+
+    private func initializeOfflineSupport() {
+        // Initialize local data store
+        do {
+            try LocalDataStore.shared.initialize()
+        } catch {
+            logger.error("Failed to initialize LocalDataStore: \(error.localizedDescription, privacy: .public). Offline features will be unavailable.")
+        }
+
+        // Start network monitoring (already started in AppViewModel, but ensure it's running)
+        NetworkMonitor.shared.start()
+
+        // Observe pending count changes to update menu bar badge
+        pendingCountObserver = NotificationCenter.default.addObserver(
+            forName: .init("pendingCountChanged"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateMenuBarBadge()
+            }
+        }
+    }
+
+    private func updateMenuBarBadge() {
+        // Update menu bar icon badge based on pending operations
+        guard let button = statusItem?.button else { return }
+
+        let pendingCount = appViewModel.pendingCount
+        let hasConflicts = appViewModel.hasConflicts
+
+        if hasConflicts {
+            // Show warning badge for conflicts
+            button.image?.isTemplate = false
+        } else if pendingCount > 0 {
+            // Could add a small dot indicator for pending changes
+            // For now, just ensure template mode is on
+            button.image?.isTemplate = true
+        } else {
+            button.image?.isTemplate = true
+        }
     }
 
     private func setupStatusItem() {
@@ -45,7 +86,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             updateMenuBarIcon()
             button.action = #selector(statusItemClicked)
             button.target = self
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            button.sendAction(on: [.leftMouseUp])
+
+            // Pass button to menu panel for positioning
+            MenuPanelController.shared.setStatusItemButton(button)
         }
 
         // Observe icon changes
@@ -58,59 +102,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.updateMenuBarIcon()
             }
         }
-
-        updateMenu()
-    }
-
-    private func updateMenu() {
-        let menu = NSMenu()
-
-        // Open Notebooks
-        let openItem = NSMenuItem(title: "Open Notebooks", action: #selector(openNotebooks), keyEquivalent: "")
-        openItem.target = self
-        menu.addItem(openItem)
-
-        // Quick Note
-        let quickNoteItem = NSMenuItem(title: "Quick Note", action: #selector(showQuickNote), keyEquivalent: "")
-        quickNoteItem.target = self
-        menu.addItem(quickNoteItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Settings
-        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: "")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
-
-        // Check for Updates
-        let updateItem = NSMenuItem(title: "Check for Updates...", action: #selector(checkForUpdates), keyEquivalent: "")
-        updateItem.target = self
-        menu.addItem(updateItem)
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Quit
-        let quitItem = NSMenuItem(title: "Quit Noted", action: #selector(quitApp), keyEquivalent: "")
-        quitItem.target = self
-        menu.addItem(quitItem)
-
-        statusItem?.menu = menu
     }
 
     @objc private func statusItemClicked(_ sender: AnyObject?) {
-        guard let event = NSApp.currentEvent else { return }
-
-        if event.type == .leftMouseUp {
-            // Left click - toggle main panel
-            statusItem?.menu = nil
-            MainPanelController.shared.togglePanel()
-
-            // Re-enable menu for right-click
-            DispatchQueue.main.async { [weak self] in
-                self?.updateMenu()
-            }
+        // Left click shows the themed menu dropdown
+        // Hide other panels if visible
+        if MainPanelController.shared.isVisible {
+            MainPanelController.shared.hidePanel()
         }
-        // Right click will show the menu automatically
+        if QuickNotePanelController.shared.isVisible {
+            QuickNotePanelController.shared.hidePanel()
+        }
+        MenuPanelController.shared.togglePanel()
     }
 
     private func updateMenuBarIcon() {
@@ -228,14 +231,18 @@ class SettingsPanelController: NSObject {
 
         let panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: 400, height: 650),
-            styleMask: [.titled, .closable],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
-        panel.title = "Settings"
+        panel.isMovableByWindowBackground = true
         panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
+        panel.backgroundColor = .clear
+        panel.isOpaque = false
+        panel.hasShadow = true
 
         updatePanelContent(panel, appViewModel: appViewModel)
 
@@ -255,6 +262,7 @@ class SettingsPanelController: NSObject {
         })
         .environmentObject(appViewModel)
         .themed()
+        .ignoresSafeArea()
 
         panel.contentView = NSHostingView(rootView: contentView)
     }

@@ -94,3 +94,57 @@ struct LinkPreview: Codable, Identifiable, Equatable {
         case siteName = "site_name"
     }
 }
+
+// MARK: - LocalNote Conversion
+
+extension Note {
+    /// Create a Note from a LocalNote
+    init(from localNote: LocalNote) {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let content: NoteContent
+        if let data = localNote.contentJSON.data(using: .utf8),
+           let decoded = try? decoder.decode(NoteContent.self, from: data) {
+            content = decoded
+        } else {
+            content = .text(localNote.plainText)
+        }
+
+        let linkPreviews: [LinkPreview]?
+        if let json = localNote.linkPreviewsJSON,
+           let data = json.data(using: .utf8),
+           let decoded = try? decoder.decode([LinkPreview].self, from: data) {
+            linkPreviews = decoded
+        } else {
+            linkPreviews = nil
+        }
+
+        self.id = localNote.id
+        self.notebookId = localNote.notebookId
+        self.content = content
+        self.plainText = localNote.plainText
+        self.isTodo = localNote.isTodo
+        self.isDone = localNote.isDone
+        self.reminderAt = nil
+        self.version = localNote.version
+        self.createdAt = localNote.createdAt
+        self.updatedAt = localNote.updatedAt
+        self.deletedAt = localNote.deletedAt
+        self.linkPreviews = linkPreviews
+    }
+}
+
+extension NoteImage {
+    /// Create a NoteImage from a LocalNoteImage
+    init(from localImage: LocalNoteImage) {
+        self.id = localImage.id
+        self.noteId = localImage.noteId
+        self.filename = localImage.filename
+        self.mimeType = localImage.mimeType
+        self.storageKey = localImage.storageKey
+        self.size = localImage.size
+        self.createdAt = localImage.createdAt
+        self.url = localImage.url
+    }
+}

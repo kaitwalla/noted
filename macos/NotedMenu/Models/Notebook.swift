@@ -16,3 +16,17 @@ struct Notebook: Codable, Identifiable, Equatable {
         case sortOrder = "sort_order"
     }
 }
+
+// MARK: - LocalNotebook Conversion
+
+extension Notebook {
+    /// Create a Notebook from a LocalNotebook
+    init(from localNotebook: LocalNotebook) {
+        self.id = localNotebook.id
+        self.title = localNotebook.title
+        self.createdAt = localNotebook.createdAt
+        self.updatedAt = localNotebook.updatedAt
+        self.deletedAt = localNotebook.deletedAt
+        self.sortOrder = localNotebook.sortOrder
+    }
+}
