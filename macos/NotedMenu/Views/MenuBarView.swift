@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var appViewModel: AppViewModel
+    @ObservedObject var hotkeyManager = HotkeyManager.shared
     @Environment(\.themeColors) var themeColors
     @State private var showSettings = false
 
@@ -74,7 +75,7 @@ struct MenuBarView: View {
                         .font(.caption)
                         .foregroundColor(themeColors.secondaryText)
                     Spacer()
-                    Text(HotkeyManager.shared.hotkeyString)
+                    Text(hotkeyManager.hotkeyString)
                         .font(.caption)
                         .foregroundColor(themeColors.secondaryText)
                         .padding(.horizontal, 6)
@@ -87,7 +88,7 @@ struct MenuBarView: View {
                         .font(.caption)
                         .foregroundColor(themeColors.secondaryText)
                     Spacer()
-                    Text(HotkeyManager.shared.notebookHotkeyString)
+                    Text(hotkeyManager.notebookHotkeyString)
                         .font(.caption)
                         .foregroundColor(themeColors.secondaryText)
                         .padding(.horizontal, 6)
