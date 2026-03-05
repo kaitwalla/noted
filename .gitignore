@@ -47,3 +47,7 @@ temp/
 
 # macOS app releases
 macos/releases/
+
+# Server binary and uploads
+server/server
+server/uploads/

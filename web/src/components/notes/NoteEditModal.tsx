@@ -18,13 +18,20 @@ export function NoteEditModal({ note, onClose }: NoteEditModalProps) {
 
   const editor = useEditor({
     extensions: [StarterKit, TiptapImage],
-    content: note.content,
+    content: '',
     editorProps: {
       attributes: {
         class: 'note-edit-editor',
       },
     },
   });
+
+  // Set editor content once editor is ready
+  useEffect(() => {
+    if (editor && note.content) {
+      editor.commands.setContent(note.content);
+    }
+  }, [editor, note.content]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
