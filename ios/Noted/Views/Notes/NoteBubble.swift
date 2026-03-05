@@ -8,6 +8,7 @@ struct NoteBubble: View {
     let onDelete: () -> Void
     let onToggleTodo: () -> Void
 
+    @Environment(\.themeColors) private var colors
     @State private var isEditing = false
     @State private var editText = ""
 
@@ -26,8 +27,17 @@ struct NoteBubble: View {
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 8)
-                    .background(Color.accentColor.opacity(0.15))
+                    .background(colors.accent.opacity(0.15))
                     .cornerRadius(18)
+                }
+
+                // Link previews
+                if let previews = note.linkPreviews, !previews.isEmpty {
+                    VStack(spacing: 8) {
+                        ForEach(previews) { preview in
+                            LinkPreviewCard(preview: preview)
+                        }
+                    }
                 }
 
                 // Text content (if any)
@@ -40,7 +50,7 @@ struct NoteBubble: View {
                                 onToggleTodo()
                             } label: {
                                 Image(systemName: note.isDone ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(note.isDone ? .green : .secondary)
+                                    .foregroundStyle(note.isDone ? colors.success : colors.secondaryText)
                                     .contentTransition(.symbolEffect(.replace))
                             }
                             .buttonStyle(.plain)
@@ -48,11 +58,11 @@ struct NoteBubble: View {
 
                         Text(note.content.content)
                             .strikethrough(note.isTodo && note.isDone)
-                            .foregroundStyle(note.isTodo && note.isDone ? .secondary : .primary)
+                            .foregroundStyle(note.isTodo && note.isDone ? colors.secondaryText : colors.text)
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(Color.accentColor.opacity(0.15))
+                    .background(colors.accent.opacity(0.15))
                     .cornerRadius(18)
                     .contextMenu {
                         Button {
@@ -88,13 +98,13 @@ struct NoteBubble: View {
                         Text(formatReminderDate(reminderAt))
                             .font(.caption2)
                     }
-                    .foregroundStyle(reminderAt < Date() ? .red : .secondary)
+                    .foregroundStyle(reminderAt < Date() ? colors.error : colors.secondaryText)
                 }
 
                 // Timestamp
                 Text(formatTime(note.createdAt))
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(colors.secondaryText)
             }
         }
         .sheet(isPresented: $isEditing) {

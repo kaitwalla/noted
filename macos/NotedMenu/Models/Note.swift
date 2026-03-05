@@ -12,6 +12,7 @@ struct Note: Codable, Identifiable, Equatable {
     let createdAt: Date
     var updatedAt: Date
     var deletedAt: Date?
+    var linkPreviews: [LinkPreview]?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -25,6 +26,7 @@ struct Note: Codable, Identifiable, Equatable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case deletedAt = "deleted_at"
+        case linkPreviews = "link_previews"
     }
 }
 
@@ -70,5 +72,25 @@ struct NoteImage: Codable, Identifiable, Equatable {
         case size
         case createdAt = "created_at"
         case url
+    }
+}
+
+struct LinkPreview: Codable, Identifiable, Equatable {
+    let id: UUID
+    let url: String
+    var title: String?
+    var description: String?
+    var imageUrl: String?
+    var faviconUrl: String?
+    var siteName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case url
+        case title
+        case description
+        case imageUrl = "image_url"
+        case faviconUrl = "favicon_url"
+        case siteName = "site_name"
     }
 }

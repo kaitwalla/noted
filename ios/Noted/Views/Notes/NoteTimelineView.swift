@@ -3,6 +3,7 @@ import UIKit
 
 struct NoteTimelineView: View {
     let notebook: Notebook
+    @Environment(\.themeColors) private var colors
     @State private var viewModel: NotesViewModel
     @State private var imagesViewModel = ImagesViewModel()
     @State private var noteImages: [UUID: [NoteImage]] = [:]
@@ -66,7 +67,7 @@ struct NoteTimelineView: View {
                                 } header: {
                                     Text(formatSectionDate(group.date))
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(colors.secondaryText)
                                         .padding(.top, 8)
                                 }
                             }
@@ -105,7 +106,7 @@ struct NoteTimelineView: View {
                         .scaleEffect(0.8)
                     Text("Uploading image...")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(colors.secondaryText)
                 }
                 .padding(.vertical, 4)
             }

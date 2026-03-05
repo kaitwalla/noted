@@ -7,6 +7,8 @@ import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
 import { NotebookSidebar } from './components/notebooks/NotebookSidebar';
 import { NoteTimeline } from './components/notes/NoteTimeline';
+import { PublicNoteView } from './components/notes/PublicNoteView';
+import { useUrlSync } from './hooks/useUrlSync';
 import './App.css';
 
 // AuthInitializer renders unconditionally to ensure auth state is loaded
@@ -51,6 +53,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Sync URL with selected notebook/note
+  useUrlSync();
+
   return (
     <div className="app-layout">
       <NotebookSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -72,8 +77,27 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          {/* Public note view (no auth required) */}
+          <Route path="/n/:noteId" element={<PublicNoteView />} />
+          {/* Protected routes */}
           <Route
             path="/"
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notebooks/:notebookId"
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notebooks/:notebookId/:timestamp"
             element={
               <ProtectedRoute>
                 <AppLayout />

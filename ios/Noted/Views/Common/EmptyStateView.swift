@@ -7,20 +7,23 @@ struct EmptyStateView: View {
     var action: (() -> Void)?
     var actionTitle: String?
 
+    @Environment(\.themeColors) private var colors
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 64))
-                .foregroundStyle(.secondary.opacity(0.5))
+                .foregroundStyle(colors.secondaryText.opacity(0.5))
                 .symbolEffect(.pulse, options: .repeating.speed(0.5))
 
             Text(title)
                 .font(.title2)
                 .fontWeight(.semibold)
+                .foregroundStyle(colors.text)
 
             Text(subtitle)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(colors.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 

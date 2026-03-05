@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var authViewModel: AuthViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showLogoutConfirmation = false
     @State private var showClearDataConfirmation = false
     @State private var isSyncing = false
@@ -84,6 +85,38 @@ struct SettingsView: View {
                     Text("Sync")
                 } footer: {
                     Text("Your notes are stored locally and synced when online.")
+                }
+
+                // Appearance section
+                Section {
+                    ForEach(AppTheme.allCases) { theme in
+                        Button {
+                            themeManager.currentTheme = theme
+                        } label: {
+                            HStack {
+                                Image(systemName: theme.icon)
+                                    .foregroundStyle(themeManager.currentTheme == theme ? themeManager.colors.accent : .secondary)
+                                    .frame(width: 24)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(theme.rawValue)
+                                        .foregroundStyle(themeManager.colors.text)
+                                    Text(theme.description)
+                                        .font(.caption)
+                                        .foregroundStyle(themeManager.colors.secondaryText)
+                                }
+
+                                Spacer()
+
+                                if themeManager.currentTheme == theme {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(themeManager.colors.accent)
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Appearance")
                 }
 
                 // Notifications section

@@ -155,6 +155,23 @@ class ApiClient {
     return response.data;
   }
 
+  // Public note (no auth required)
+  async getPublicNote(noteId: string): Promise<Note> {
+    // Use axios directly without auth header
+    const response = await axios.get<Note>(`${API_URL}/public/notes/${noteId}`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+  }
+
+  // Public note images (no auth required)
+  async getPublicNoteImages(noteId: string): Promise<Image[]> {
+    const response = await axios.get<Image[]>(`${API_URL}/public/notes/${noteId}/images`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response.data;
+  }
+
   // Images
   async uploadImage(noteId: string, file: File, keepFullSize = false): Promise<Image> {
     const formData = new FormData();

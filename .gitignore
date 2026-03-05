@@ -51,3 +51,7 @@ macos/releases/
 # Server binary and uploads
 server/server
 server/uploads/
+
+# Xcode user data
+*.xcuserstate
+xcuserdata/

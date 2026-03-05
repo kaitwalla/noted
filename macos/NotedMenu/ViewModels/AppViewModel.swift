@@ -1,12 +1,20 @@
 import Foundation
 import SwiftUI
 
+/// Navigation state for the menu bar popover
+enum MenuViewState: Equatable {
+    case notebooks
+    case noteStream(Notebook)
+}
+
 @MainActor
 final class AppViewModel: ObservableObject {
     @Published var user: User?
     @Published var notebooks: [Notebook] = []
     @Published var isLoading = false
     @Published var error: String?
+    @Published var viewState: MenuViewState = .notebooks
+    @Published var isCheckingAuth = true
 
     @AppStorage("defaultNotebookId") var defaultNotebookId: String = ""
 
@@ -23,7 +31,10 @@ final class AppViewModel: ObservableObject {
         if AuthService.shared.isAuthenticated {
             Task {
                 await loadUser()
+                isCheckingAuth = false
             }
+        } else {
+            isCheckingAuth = false
         }
     }
 
@@ -32,6 +43,9 @@ final class AppViewModel: ObservableObject {
         error = nil
 
         do {
+            // Proactively refresh token if needed before making requests
+            try await APIService.shared.refreshAccessTokenIfNeeded()
+
             user = try await AuthService.shared.getMe()
             await loadNotebooks()
         } catch {
@@ -78,5 +92,16 @@ final class AppViewModel: ObservableObject {
         user = nil
         notebooks = []
         defaultNotebookId = ""
+        viewState = .notebooks
+    }
+
+    // MARK: - Navigation
+
+    func openNoteStream(for notebook: Notebook) {
+        viewState = .noteStream(notebook)
+    }
+
+    func backToNotebooks() {
+        viewState = .notebooks
     }
 }

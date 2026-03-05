@@ -5,6 +5,7 @@ struct NoteInputView: View {
     let onSend: (String) -> Void
     var onImageSelected: ((UIImage, Bool) -> Void)?
 
+    @Environment(\.themeColors) private var colors
     @State private var text = ""
     @FocusState private var isFocused: Bool
 
@@ -24,7 +25,7 @@ struct NoteInputView: View {
                 .focused($isFocused)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(Color(.secondarySystemBackground))
+                .background(colors.secondaryBackground)
                 .cornerRadius(20)
 
             // Send button
@@ -33,13 +34,13 @@ struct NoteInputView: View {
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.title)
-                    .foregroundStyle(canSend ? .accent : .secondary)
+                    .foregroundStyle(canSend ? colors.accent : colors.secondaryText)
             }
             .disabled(!canSend)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color(.systemBackground))
+        .background(colors.background)
         .onSubmit {
             if canSend {
                 sendNote()

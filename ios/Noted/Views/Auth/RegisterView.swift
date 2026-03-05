@@ -3,6 +3,7 @@ import SwiftUI
 struct RegisterView: View {
     @Bindable var viewModel: AuthViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.themeColors) private var colors
 
     var body: some View {
         VStack(spacing: 24) {
@@ -13,8 +14,9 @@ struct RegisterView: View {
                 Text("Create Account")
                     .font(.largeTitle)
                     .fontWeight(.bold)
+                    .foregroundStyle(colors.text)
                 Text("Sign up to start taking notes")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(colors.secondaryText)
             }
 
             Spacer()
@@ -27,25 +29,25 @@ struct RegisterView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(colors.secondaryBackground)
                     .cornerRadius(10)
 
                 SecureField("Password", text: $viewModel.password)
                     .textContentType(.newPassword)
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(colors.secondaryBackground)
                     .cornerRadius(10)
 
                 SecureField("Confirm Password", text: $viewModel.confirmPassword)
                     .textContentType(.newPassword)
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(colors.secondaryBackground)
                     .cornerRadius(10)
 
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(colors.error)
                         .multilineTextAlignment(.center)
                 }
 

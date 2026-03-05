@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -61,12 +62,13 @@ func (s *Server) handleListNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load tags for each note
+	// Load tags and link previews for each note
 	for i := range notes {
 		tags, err := s.store.GetTagsForNote(r.Context(), notes[i].ID)
 		if err == nil {
 			notes[i].Tags = tags
 		}
+		s.loadNoteLinkPreviews(r.Context(), &notes[i])
 	}
 
 	if notes == nil {
@@ -154,6 +156,9 @@ func (s *Server) handleCreateNote(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Load link previews
+	s.loadNoteLinkPreviews(r.Context(), note)
+
 	respondJSON(w, http.StatusCreated, note)
 }
 
@@ -195,6 +200,9 @@ func (s *Server) handleGetNote(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		note.Tags = tags
 	}
+
+	// Load link previews
+	s.loadNoteLinkPreviews(r.Context(), note)
 
 	respondJSON(w, http.StatusOK, note)
 }
@@ -251,6 +259,9 @@ func (s *Server) handleUpdateNote(w http.ResponseWriter, r *http.Request) {
 	if req.IsDone != nil {
 		note.IsDone = *req.IsDone
 	}
+	if req.IsPublic != nil {
+		note.IsPublic = *req.IsPublic
+	}
 	if req.ReminderAt != nil {
 		note.ReminderAt = req.ReminderAt
 	}
@@ -278,7 +289,72 @@ func (s *Server) handleUpdateNote(w http.ResponseWriter, r *http.Request) {
 		note.Tags = tags
 	}
 
+	// Reload link previews if content changed
+	if req.Content != nil || req.PlainText != "" {
+		// Clear cached previews and refetch
+		s.store.SetNoteLinkPreviews(r.Context(), note.ID, nil)
+		s.loadNoteLinkPreviews(r.Context(), note)
+	} else {
+		s.loadNoteLinkPreviews(r.Context(), note)
+	}
+
 	respondJSON(w, http.StatusOK, note)
+}
+
+// PublicNoteResponse is a sanitized note response that excludes sensitive fields
+type PublicNoteResponse struct {
+	ID           uuid.UUID            `json:"id"`
+	Content      json.RawMessage      `json:"content"`
+	PlainText    string               `json:"plain_text,omitempty"`
+	IsTodo       bool                 `json:"is_todo"`
+	IsDone       bool                 `json:"is_done"`
+	CreatedAt    time.Time            `json:"created_at"`
+	UpdatedAt    time.Time            `json:"updated_at"`
+	Tags         []models.Tag         `json:"tags,omitempty"`
+	LinkPreviews []models.LinkPreview `json:"link_previews,omitempty"`
+}
+
+func (s *Server) handleGetPublicNote(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid_request", "invalid note ID")
+		return
+	}
+
+	note, err := s.store.GetPublicNoteByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "not_found", "note not found")
+			return
+		}
+		log.Printf("failed to get public note %s: %v", id, err)
+		respondError(w, http.StatusInternalServerError, "server_error", "failed to get note")
+		return
+	}
+
+	// Load tags
+	tags, err := s.store.GetTagsForNote(r.Context(), note.ID)
+	if err != nil {
+		log.Printf("failed to get tags for public note %s: %v", note.ID, err)
+	}
+
+	// Load link previews
+	s.loadNoteLinkPreviews(r.Context(), note)
+
+	// Return sanitized response without user_id and notebook_id
+	response := PublicNoteResponse{
+		ID:           note.ID,
+		Content:      note.Content,
+		PlainText:    note.PlainText,
+		IsTodo:       note.IsTodo,
+		IsDone:       note.IsDone,
+		CreatedAt:    note.CreatedAt,
+		UpdatedAt:    note.UpdatedAt,
+		Tags:         tags,
+		LinkPreviews: note.LinkPreviews,
+	}
+
+	respondJSON(w, http.StatusOK, response)
 }
 
 func (s *Server) handleDeleteNote(w http.ResponseWriter, r *http.Request) {

@@ -13,6 +13,7 @@ final class KeychainService {
 
     func saveAccessToken(_ token: String) throws {
         UserDefaults.standard.set(token, forKey: accessTokenKey)
+        UserDefaults.standard.synchronize()
     }
 
     func getAccessToken() -> String? {
@@ -27,6 +28,7 @@ final class KeychainService {
 
     func saveRefreshToken(_ token: String) throws {
         UserDefaults.standard.set(token, forKey: refreshTokenKey)
+        UserDefaults.standard.synchronize()
     }
 
     func getRefreshToken() -> String? {

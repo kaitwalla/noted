@@ -30,19 +30,21 @@ type Notebook struct {
 
 // Note represents a single note entry
 type Note struct {
-	ID         uuid.UUID       `json:"id"`
-	NotebookID uuid.UUID       `json:"notebook_id"`
-	UserID     uuid.UUID       `json:"user_id"`
-	Content    json.RawMessage `json:"content"`
-	PlainText  string          `json:"plain_text,omitempty"`
-	IsTodo     bool            `json:"is_todo"`
-	IsDone     bool            `json:"is_done"`
-	ReminderAt *time.Time      `json:"reminder_at,omitempty"`
-	Version    int64           `json:"version"`
-	CreatedAt  time.Time       `json:"created_at"`
-	UpdatedAt  time.Time       `json:"updated_at"`
-	DeletedAt  *time.Time      `json:"deleted_at,omitempty"`
-	Tags       []Tag           `json:"tags,omitempty"`
+	ID           uuid.UUID       `json:"id"`
+	NotebookID   uuid.UUID       `json:"notebook_id"`
+	UserID       uuid.UUID       `json:"user_id"`
+	Content      json.RawMessage `json:"content"`
+	PlainText    string          `json:"plain_text,omitempty"`
+	IsTodo       bool            `json:"is_todo"`
+	IsDone       bool            `json:"is_done"`
+	IsPublic     bool            `json:"is_public"`
+	ReminderAt   *time.Time      `json:"reminder_at,omitempty"`
+	Version      int64           `json:"version"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
+	DeletedAt    *time.Time      `json:"deleted_at,omitempty"`
+	Tags         []Tag           `json:"tags,omitempty"`
+	LinkPreviews []LinkPreview   `json:"link_previews,omitempty"`
 }
 
 // Tag represents a label for notes
@@ -71,6 +73,20 @@ type Image struct {
 	StorageKey string    `json:"-"`
 	Size       int64     `json:"size"`
 	CreatedAt  time.Time `json:"created_at"`
+}
+
+// LinkPreview represents metadata extracted from a URL
+type LinkPreview struct {
+	ID          uuid.UUID  `json:"id"`
+	URL         string     `json:"url"`
+	Title       *string    `json:"title,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	ImageURL    *string    `json:"image_url,omitempty"`
+	FaviconURL  *string    `json:"favicon_url,omitempty"`
+	SiteName    *string    `json:"site_name,omitempty"`
+	FetchedAt   time.Time  `json:"fetched_at"`
+	Error       *string    `json:"error,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 // CreateUserRequest represents a registration request
@@ -118,6 +134,7 @@ type UpdateNoteRequest struct {
 	PlainText  string          `json:"plain_text,omitempty"`
 	IsTodo     *bool           `json:"is_todo,omitempty"`
 	IsDone     *bool           `json:"is_done,omitempty"`
+	IsPublic   *bool           `json:"is_public,omitempty"`
 	ReminderAt *time.Time      `json:"reminder_at,omitempty"`
 	TagIDs     []uuid.UUID     `json:"tag_ids,omitempty"`
 }
@@ -136,4 +153,9 @@ type SyncResponse struct {
 	Tags        []Tag      `json:"tags"`
 	ServerTime  time.Time  `json:"server_time"`
 	HasConflict bool       `json:"has_conflict"`
+}
+
+// FetchLinkPreviewsRequest represents a request to fetch link previews
+type FetchLinkPreviewsRequest struct {
+	URLs []string `json:"urls"`
 }
