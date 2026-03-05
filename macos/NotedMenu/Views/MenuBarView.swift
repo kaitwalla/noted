@@ -2,7 +2,6 @@ import SwiftUI
 
 struct MenuBarView: View {
     @EnvironmentObject var appViewModel: AppViewModel
-    @ObservedObject var hotkeyManager = HotkeyManager.shared
     @Environment(\.themeColors) var themeColors
     @State private var showSettings = false
 
@@ -64,41 +63,6 @@ struct MenuBarView: View {
                     notebookRow(notebook)
                 }
             }
-
-            Divider()
-                .background(themeColors.border)
-
-            // Hotkey hints
-            VStack(spacing: 4) {
-                HStack {
-                    Text("Quick Note:")
-                        .font(.caption)
-                        .foregroundColor(themeColors.secondaryText)
-                    Spacer()
-                    Text(hotkeyManager.hotkeyString)
-                        .font(.caption)
-                        .foregroundColor(themeColors.secondaryText)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(themeColors.tertiaryBackground)
-                        .cornerRadius(4)
-                }
-                HStack {
-                    Text("Toggle Notebook:")
-                        .font(.caption)
-                        .foregroundColor(themeColors.secondaryText)
-                    Spacer()
-                    Text(hotkeyManager.notebookHotkeyString)
-                        .font(.caption)
-                        .foregroundColor(themeColors.secondaryText)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(themeColors.tertiaryBackground)
-                        .cornerRadius(4)
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
 
             Divider()
                 .background(themeColors.border)
