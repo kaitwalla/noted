@@ -35,8 +35,8 @@ final class APIService {
     }()
 
     private let refreshThresholdDays: TimeInterval = 7
-    private var isRefreshing = false
-    private let refreshQueue = DispatchQueue(label: "com.noted.menu.refresh")
+    private var refreshTask: Task<Void, Error>?
+    private let refreshLock = NSLock()
 
     private init() {}
 
@@ -83,7 +83,12 @@ final class APIService {
         let parts = token.split(separator: ".")
         guard parts.count == 3 else { return nil }
 
+        // Convert URL-safe base64 to standard base64
         var base64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+
+        // Add padding if needed
         while base64.count % 4 != 0 {
             base64.append("=")
         }
@@ -101,8 +106,18 @@ final class APIService {
             return false
         }
 
+        // Refresh if token expires within threshold OR is already expired
         let threshold = Date().addingTimeInterval(refreshThresholdDays * 24 * 60 * 60)
         return expirationDate < threshold
+    }
+
+    /// Returns true if the access token is already expired
+    func isAccessTokenExpired() -> Bool {
+        guard let token = accessToken,
+              let expirationDate = tokenExpirationDate(token) else {
+            return true // No token = treat as expired
+        }
+        return expirationDate < Date()
     }
 
     func refreshAccessTokenIfNeeded() async throws {
@@ -111,26 +126,40 @@ final class APIService {
             return
         }
 
-        let shouldRefresh = refreshQueue.sync { () -> Bool in
-            if isRefreshing {
-                return false
+        // Check if there's already a refresh in progress
+        let existingTask: Task<Void, Error>? = refreshLock.withLock {
+            if let task = refreshTask {
+                return task
             }
-            isRefreshing = true
-            return true
+            return nil
         }
 
-        guard shouldRefresh else { return }
-
-        defer {
-            refreshQueue.sync {
-                isRefreshing = false
-            }
+        // If another refresh is in progress, wait for it
+        if let existingTask = existingTask {
+            try await existingTask.value
+            return
         }
 
-        guard accessTokenNeedsRefresh() else { return }
+        // Create a new refresh task
+        let task = Task<Void, Error> {
+            defer {
+                refreshLock.withLock {
+                    refreshTask = nil
+                }
+            }
 
-        let response: TokenRefreshResponse = try await refreshTokenRequest(currentRefreshToken)
-        setTokens(access: response.accessToken, refresh: response.refreshToken)
+            // Double-check after acquiring the lock
+            guard accessTokenNeedsRefresh() else { return }
+
+            let response: TokenRefreshResponse = try await refreshTokenRequest(currentRefreshToken)
+            setTokens(access: response.accessToken, refresh: response.refreshToken)
+        }
+
+        refreshLock.withLock {
+            refreshTask = task
+        }
+
+        try await task.value
     }
 
     private func refreshTokenRequest(_ token: String) async throws -> TokenRefreshResponse {
@@ -311,5 +340,56 @@ private extension Data {
         if let data = string.data(using: .utf8) {
             append(data)
         }
+    }
+}
+
+// MARK: - Notes API
+
+extension APIService {
+    /// Fetches all notes for a notebook
+    /// - Parameter notebookId: The notebook UUID
+    /// - Returns: Array of notes sorted by creation date (newest first)
+    func getNotes(notebookId: UUID) async throws -> [Note] {
+        let notes: [Note] = try await get("notebooks/\(notebookId.uuidString)/notes")
+        return notes
+            .filter { $0.deletedAt == nil }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Fetches all images for a note
+    /// - Parameter noteId: The note UUID
+    /// - Returns: Array of note images
+    func getNoteImages(noteId: UUID) async throws -> [NoteImage] {
+        try await get("notes/\(noteId.uuidString)/images")
+    }
+
+    /// Updates an existing note
+    /// - Parameters:
+    ///   - noteId: The note UUID
+    ///   - plainText: New plain text content
+    ///   - isTodo: Whether the note is a todo
+    ///   - isDone: Whether the todo is done
+    /// - Returns: Updated note
+    func updateNote(noteId: UUID, plainText: String, isTodo: Bool? = nil, isDone: Bool? = nil) async throws -> Note {
+        struct UpdateRequest: Encodable {
+            let plainText: String
+            let isTodo: Bool?
+            let isDone: Bool?
+
+            enum CodingKeys: String, CodingKey {
+                case plainText = "plain_text"
+                case isTodo = "is_todo"
+                case isDone = "is_done"
+            }
+        }
+
+        let request = UpdateRequest(plainText: plainText, isTodo: isTodo, isDone: isDone)
+        return try await put("notes/\(noteId.uuidString)", body: request)
+    }
+
+    /// Deletes a note
+    /// - Parameter noteId: The note UUID
+    func deleteNote(noteId: UUID) async throws {
+        try await delete("notes/\(noteId.uuidString)")
     }
 }

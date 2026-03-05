@@ -34,6 +34,7 @@
 		A10000000000000000000027 /* LinkPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000027 /* LinkPreviewCard.swift */; };
 		A10000000000000000000028 /* MenuBarIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000028 /* MenuBarIconView.swift */; };
 		A10000000000000000000029 /* UpdateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000029 /* UpdateService.swift */; };
+		A10000000000000000000030 /* MainPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000030 /* MainPanel.swift */; };
 		C30000000000000000000001 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = C20000000000000000000001 /* Sparkle */; };
 /* End PBXBuildFile section */
 
@@ -67,6 +68,7 @@
 		A20000000000000000000027 /* LinkPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkPreviewCard.swift; sourceTree = "<group>"; };
 		A20000000000000000000028 /* MenuBarIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconView.swift; sourceTree = "<group>"; };
 		A20000000000000000000029 /* UpdateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateService.swift; sourceTree = "<group>"; };
+		A20000000000000000000030 /* MainPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainPanel.swift; sourceTree = "<group>"; };
 		A30000000000000000000001 /* NotedMenu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotedMenu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -136,6 +138,7 @@
 			children = (
 				A20000000000000000000010 /* MenuBarView.swift */,
 				A20000000000000000000011 /* QuickNotePanel.swift */,
+				A20000000000000000000030 /* MainPanel.swift */,
 				A20000000000000000000012 /* LoginView.swift */,
 				A20000000000000000000013 /* SettingsView.swift */,
 				A20000000000000000000022 /* MarkdownTextView.swift */,
@@ -299,6 +302,7 @@
 				A10000000000000000000027 /* LinkPreviewCard.swift in Sources */,
 				A10000000000000000000028 /* MenuBarIconView.swift in Sources */,
 				A10000000000000000000029 /* UpdateService.swift in Sources */,
+				A10000000000000000000030 /* MainPanel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -191,6 +191,7 @@ class SettingsPanelController: NSObject {
 
     private var panel: NSPanel?
     private weak var appViewModel: AppViewModel?
+    private var themeCancellable: AnyCancellable?
 
     func setAppViewModel(_ vm: AppViewModel) {
         self.appViewModel = vm
@@ -224,7 +225,7 @@ class SettingsPanelController: NSObject {
         guard let appViewModel = appViewModel else { return }
 
         let panel = KeyablePanel(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 580),
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 650),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -234,6 +235,19 @@ class SettingsPanelController: NSObject {
         panel.level = .floating
         panel.isReleasedWhenClosed = false
 
+        updatePanelContent(panel, appViewModel: appViewModel)
+
+        self.panel = panel
+
+        // Observe theme changes
+        themeCancellable = ThemeManager.shared.$currentTheme
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updatePanelTheme()
+            }
+    }
+
+    private func updatePanelContent(_ panel: NSPanel, appViewModel: AppViewModel) {
         let contentView = SettingsView(onDismiss: { [weak self] in
             self?.hidePanel()
         })
@@ -241,7 +255,10 @@ class SettingsPanelController: NSObject {
         .themed()
 
         panel.contentView = NSHostingView(rootView: contentView)
+    }
 
-        self.panel = panel
+    private func updatePanelTheme() {
+        guard let panel = panel, let appViewModel = appViewModel else { return }
+        updatePanelContent(panel, appViewModel: appViewModel)
     }
 }
