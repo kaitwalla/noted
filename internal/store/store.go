@@ -15,6 +15,7 @@ type Store interface {
 	NoteStore
 	TagStore
 	ImageStore
+	LinkPreviewStore
 	Close() error
 }
 
@@ -41,6 +42,7 @@ type NotebookStore interface {
 type NoteStore interface {
 	CreateNote(ctx context.Context, note *models.Note) error
 	GetNoteByID(ctx context.Context, id uuid.UUID) (*models.Note, error)
+	GetPublicNoteByID(ctx context.Context, id uuid.UUID) (*models.Note, error)
 	GetNotesByNotebookID(ctx context.Context, notebookID uuid.UUID, since *time.Time) ([]models.Note, error)
 	GetNotesByUserID(ctx context.Context, userID uuid.UUID, since *time.Time) ([]models.Note, error)
 	UpdateNote(ctx context.Context, note *models.Note) error
@@ -69,4 +71,12 @@ type ImageStore interface {
 	GetImageByID(ctx context.Context, id uuid.UUID) (*models.Image, error)
 	GetImagesByNoteID(ctx context.Context, noteID uuid.UUID) ([]models.Image, error)
 	DeleteImage(ctx context.Context, id uuid.UUID) error
+}
+
+// LinkPreviewStore handles link preview data operations
+type LinkPreviewStore interface {
+	GetLinkPreviewByURL(ctx context.Context, url string) (*models.LinkPreview, error)
+	CreateLinkPreview(ctx context.Context, preview *models.LinkPreview) error
+	GetLinkPreviewsForNote(ctx context.Context, noteID uuid.UUID) ([]models.LinkPreview, error)
+	SetNoteLinkPreviews(ctx context.Context, noteID uuid.UUID, previewIDs []uuid.UUID) error
 }

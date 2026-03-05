@@ -261,18 +261,7 @@ func (s *Server) handleGetImage(w http.ResponseWriter, r *http.Request) {
 		// If blob store doesn't support verification, fall through to JWT auth
 	}
 
-	// Fall back to JWT authentication
-	userID, ok := GetUserID(r.Context())
-	if !ok {
-		// Try to authenticate via JWT
-		userID, ok = s.tryAuthFromRequest(r)
-		if !ok {
-			respondError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
-			return
-		}
-	}
-
-	// Verify note ownership
+	// Get the associated note to check if it's public
 	note, err := s.store.GetNoteByID(r.Context(), image.NoteID)
 	if err != nil {
 		if errors.Is(err, store.ErrNotFound) {
@@ -283,6 +272,24 @@ func (s *Server) handleGetImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// If note is public, allow access without authentication
+	if note.IsPublic && note.DeletedAt == nil {
+		s.serveImage(w, r, image)
+		return
+	}
+
+	// Fall back to JWT authentication for private notes
+	userID, ok := GetUserID(r.Context())
+	if !ok {
+		// Try to authenticate via JWT
+		userID, ok = s.tryAuthFromRequest(r)
+		if !ok {
+			respondError(w, http.StatusUnauthorized, "unauthorized", "authentication required")
+			return
+		}
+	}
+
+	// Verify note ownership for private notes
 	if note.UserID != userID {
 		respondError(w, http.StatusForbidden, "forbidden", "you don't have access to this image")
 		return
@@ -351,15 +358,20 @@ func (s *Server) handleListNoteImages(w http.ResponseWriter, r *http.Request) {
 
 	images, err := s.store.GetImagesByNoteID(r.Context(), noteID)
 	if err != nil {
+		log.Printf("failed to get images for note %s: %v", noteID, err)
 		respondError(w, http.StatusInternalServerError, "server_error", "failed to get images")
 		return
 	}
 
 	// Generate signed URLs for each image
-	response := make([]ImageResponse, len(images))
-	for i, img := range images {
-		signedURL, _ := s.blobStore.GetSignedURL(r.Context(), img.StorageKey, s.config.StorageURLExpiry)
-		response[i] = ImageResponse{
+	response := make([]ImageResponse, 0, len(images))
+	for _, img := range images {
+		signedURL, err := s.blobStore.GetSignedURL(r.Context(), img.StorageKey, s.config.StorageURLExpiry)
+		if err != nil {
+			log.Printf("failed to generate signed URL for image %s: %v", img.ID, err)
+			continue // Skip images we can't generate URLs for
+		}
+		response = append(response, ImageResponse{
 			ID:         img.ID,
 			NoteID:     img.NoteID,
 			Filename:   img.Filename,
@@ -368,7 +380,56 @@ func (s *Server) handleListNoteImages(w http.ResponseWriter, r *http.Request) {
 			Size:       img.Size,
 			CreatedAt:  img.CreatedAt,
 			URL:        signedURL,
+		})
+	}
+
+	respondJSON(w, http.StatusOK, response)
+}
+
+func (s *Server) handleListPublicNoteImages(w http.ResponseWriter, r *http.Request) {
+	noteID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid_request", "invalid note ID")
+		return
+	}
+
+	// Get public note
+	note, err := s.store.GetPublicNoteByID(r.Context(), noteID)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "not_found", "note not found")
+			return
 		}
+		log.Printf("failed to get public note %s: %v", noteID, err)
+		respondError(w, http.StatusInternalServerError, "server_error", "failed to get note")
+		return
+	}
+
+	images, err := s.store.GetImagesByNoteID(r.Context(), note.ID)
+	if err != nil {
+		log.Printf("failed to get images for note %s: %v", note.ID, err)
+		respondError(w, http.StatusInternalServerError, "server_error", "failed to get images")
+		return
+	}
+
+	// Generate signed URLs for each image
+	response := make([]ImageResponse, 0, len(images))
+	for _, img := range images {
+		signedURL, err := s.blobStore.GetSignedURL(r.Context(), img.StorageKey, s.config.StorageURLExpiry)
+		if err != nil {
+			log.Printf("failed to generate signed URL for image %s: %v", img.ID, err)
+			continue // Skip images we can't generate URLs for
+		}
+		response = append(response, ImageResponse{
+			ID:         img.ID,
+			NoteID:     img.NoteID,
+			Filename:   img.Filename,
+			MimeType:   img.MimeType,
+			StorageKey: img.StorageKey,
+			Size:       img.Size,
+			CreatedAt:  img.CreatedAt,
+			URL:        signedURL,
+		})
 	}
 
 	respondJSON(w, http.StatusOK, response)
