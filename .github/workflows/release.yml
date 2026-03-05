@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - 'macos/**'
       - 'server/**'
       - 'web/**'
       - '.github/workflows/release.yml'
@@ -14,49 +13,6 @@ permissions:
   contents: write
 
 jobs:
-  build-macos:
-    runs-on: macos-14
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.2.app/Contents/Developer
-
-      - name: Build
-        run: |
-          cd macos
-          xcodebuild -project NotedMenu.xcodeproj \
-            -scheme NotedMenu \
-            -configuration Release \
-            -derivedDataPath build \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            build
-
-      - name: Create DMG
-        run: |
-          cd macos
-          APP_PATH="build/Build/Products/Release/NotedMenu.app"
-          DMG_NAME="NotedMenu.dmg"
-
-          mkdir -p dmg_contents
-          cp -R "$APP_PATH" dmg_contents/
-          ln -s /Applications dmg_contents/Applications
-
-          hdiutil create -volname "NotedMenu" \
-            -srcfolder dmg_contents \
-            -ov -format UDZO \
-            "$DMG_NAME"
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-app
-          path: macos/NotedMenu.dmg
-
   build-server:
     runs-on: ubuntu-latest
 
@@ -119,7 +75,7 @@ jobs:
           path: server/noted-server-${{ matrix.suffix }}
 
   release:
-    needs: [build-macos, build-server]
+    needs: [build-server]
     runs-on: ubuntu-latest
 
     steps:
@@ -131,7 +87,6 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          cp artifacts/macos-app/NotedMenu.dmg release/
           cp artifacts/server-linux-amd64/noted-server-linux-amd64 release/
           cp artifacts/server-linux-arm64/noted-server-linux-arm64 release/
           cp artifacts/server-darwin-amd64/noted-server-darwin-amd64 release/
@@ -151,25 +106,17 @@ jobs:
           tag_name: ${{ steps.version.outputs.short_sha }}
           name: ${{ steps.version.outputs.short_sha }}
           body: |
-            Automated build of Noted apps.
+            Automated build of Noted server.
 
             Commit: ${{ github.sha }}
 
             ## Downloads
-
-            ### macOS Menu Bar App
-            - **NotedMenu.dmg** - macOS menu bar app for quick note capture
 
             ### Server (with embedded frontend)
             - **noted-server-linux-amd64** - Linux x86_64
             - **noted-server-linux-arm64** - Linux ARM64
             - **noted-server-darwin-amd64** - macOS Intel
             - **noted-server-darwin-arm64** - macOS Apple Silicon
-
-            ## macOS App Installation
-            1. Download NotedMenu.dmg
-            2. Open the DMG and drag NotedMenu to Applications
-            3. Right-click the app and select "Open" (required for unsigned apps)
 
             ## Server Usage
             ```bash
@@ -179,7 +126,6 @@ jobs:
 
             The server serves both the API (`/api/*`) and the web frontend (`/`).
           files: |
-            release/NotedMenu.dmg
             release/noted-server-linux-amd64
             release/noted-server-linux-arm64
             release/noted-server-darwin-amd64
