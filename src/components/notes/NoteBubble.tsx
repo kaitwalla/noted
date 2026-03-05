@@ -16,7 +16,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [images, setImages] = useState<Array<{ id: string; url: string }>>([]);
   const [copied, setCopied] = useState(false);
-  const { toggleNoteDone, toggleNotePublic, removeNote } = useStore();
+  const { toggleNoteDone, toggleNotePublic, removeNote, updateNote } = useStore();
 
   // Fetch images for this note (re-fetch when note object changes)
   useEffect(() => {
@@ -81,6 +81,52 @@ export function NoteBubble({ note }: NoteBubbleProps) {
     attrs?: { src?: string; alt?: string; level?: number; checked?: boolean };
   }
 
+  // Toggle a task item's checked state and save
+  const toggleTaskItem = async (taskIndex: number) => {
+    if (!note.content || typeof note.content !== 'object') return;
+
+    // Deep clone the content
+    const newContent = JSON.parse(JSON.stringify(note.content)) as { content?: TiptapNode[] };
+
+    // Find and toggle the task item at the given index
+    let currentIndex = 0;
+    const findAndToggle = (nodes: TiptapNode[] | undefined): boolean => {
+      if (!nodes) return false;
+      for (const node of nodes) {
+        if (node.type === 'taskItem') {
+          if (currentIndex === taskIndex) {
+            node.attrs = node.attrs || {};
+            node.attrs.checked = !node.attrs.checked;
+            return true;
+          }
+          currentIndex++;
+        }
+        if (node.content && findAndToggle(node.content)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    if (findAndToggle(newContent.content)) {
+      // Generate new plain text
+      const extractText = (nodes: TiptapNode[] | undefined): string => {
+        if (!nodes) return '';
+        return nodes.map(n => {
+          if (n.text) return n.text;
+          if (n.content) return extractText(n.content);
+          return '';
+        }).join('');
+      };
+      const plainText = extractText(newContent.content);
+
+      await updateNote(note.id, {
+        content: newContent,
+        plain_text: plainText,
+      });
+    }
+  };
+
   const renderTextWithMarks = (text: string, marks: TiptapMark[] | undefined, key: number): React.ReactNode => {
     if (!marks || marks.length === 0) {
       return <span key={key}>{text}</span>;
@@ -117,6 +163,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
     if (note.content && typeof note.content === 'object') {
       const content = note.content as { content?: TiptapNode[] };
       let keyCounter = 0;
+      let taskItemIndex = 0;
 
       const renderNode = (node: TiptapNode): React.ReactNode => {
         const key = keyCounter++;
@@ -156,10 +203,17 @@ export function NoteBubble({ note }: NoteBubbleProps) {
 
           case 'taskItem': {
             const checked = node.attrs?.checked || false;
+            const currentTaskIndex = taskItemIndex++;
             const children = node.content?.map(renderNode);
             return (
               <li key={key} className={`task-item ${checked ? 'checked' : ''}`}>
-                <span className="task-checkbox">{checked ? '☑' : '☐'}</span>
+                <button
+                  className="task-checkbox"
+                  onClick={() => toggleTaskItem(currentTaskIndex)}
+                  type="button"
+                >
+                  {checked ? '☑' : '☐'}
+                </button>
                 {children}
               </li>
             );
