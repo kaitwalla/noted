@@ -44,14 +44,16 @@ export function useUrlSync() {
   } = useStore();
 
   const initialSyncDone = useRef(false);
+  const urlSyncDone = useRef(false);
 
-  // Sync URL params to state on mount/URL change
+  // Sync URL params to state only on initial load
   useEffect(() => {
-    if (notebooks.length === 0) return;
+    if (notebooks.length === 0 || urlSyncDone.current) return;
 
     if (notebookId && notebookId !== selectedNotebookId) {
       selectNotebookById(notebookId);
     }
+    urlSyncDone.current = true;
   }, [notebookId, notebooks, selectedNotebookId, selectNotebookById]);
 
   // Sync timestamp to selected note after notes are loaded
@@ -76,7 +78,7 @@ export function useUrlSync() {
       }
     } else if (selectedNotebookId) {
       const newPath = `/notebooks/${selectedNotebookId}`;
-      if (window.location.pathname !== newPath && !window.location.pathname.includes('/notebooks/')) {
+      if (window.location.pathname !== newPath) {
         navigate(newPath, { replace: true });
       }
     }

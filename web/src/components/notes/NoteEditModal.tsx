@@ -29,7 +29,8 @@ export function NoteEditModal({ note, onClose }: NoteEditModalProps) {
   // Set editor content once editor is ready
   useEffect(() => {
     if (editor && note.content) {
-      editor.commands.setContent(note.content);
+      const parsed = typeof note.content === 'string' ? JSON.parse(note.content) : note.content;
+      editor.commands.setContent(parsed);
     }
   }, [editor, note.content]);
 
