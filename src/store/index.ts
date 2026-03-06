@@ -164,6 +164,12 @@ export const useStore = create<AppState>((set, get) => ({
   // Note actions
   fetchNotes: async (notebookId) => {
     const notes = await api.getNotes(notebookId);
+    // Ensure content is parsed JSON, not a string
+    for (const note of notes) {
+      if (typeof note.content === 'string') {
+        try { note.content = JSON.parse(note.content); } catch { /* leave as-is */ }
+      }
+    }
     set({ notes });
   },
 

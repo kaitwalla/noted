@@ -161,8 +161,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
   const renderContent = () => {
     // Try to extract text content from the Tiptap JSON
     if (note.content && typeof note.content === 'object') {
-      const parsed = typeof note.content === 'string' ? JSON.parse(note.content) : note.content;
-      const content = parsed as { content?: TiptapNode[] };
+      const content = note.content as { content?: TiptapNode[] };
       let keyCounter = 0;
       let taskItemIndex = 0;
 
