@@ -161,7 +161,8 @@ export function NoteBubble({ note }: NoteBubbleProps) {
   const renderContent = () => {
     // Try to extract text content from the Tiptap JSON
     if (note.content && typeof note.content === 'object') {
-      const content = note.content as { content?: TiptapNode[] };
+      const parsed = typeof note.content === 'string' ? JSON.parse(note.content) : note.content;
+      const content = parsed as { content?: TiptapNode[] };
       let keyCounter = 0;
       let taskItemIndex = 0;
 
@@ -246,7 +247,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
               return renderTextWithMarks(node.text, node.marks, key);
             }
             // Recursively render content for unknown node types
-            if (node.content) {
+            if (Array.isArray(node.content)) {
               return <span key={key}>{node.content.map(renderNode)}</span>;
             }
             return null;
@@ -254,7 +255,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
         }
       };
 
-      if (content.content && content.content.length > 0) {
+      if (Array.isArray(content.content) && content.content.length > 0) {
         const elements = content.content.map(renderNode).filter(Boolean);
         if (elements.length > 0) {
           return <div className="rendered-content">{elements}</div>;
