@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, isValid } from 'date-fns';
 import { Check, Circle, Trash2, Edit2, Globe, GlobeLock, Link2 } from 'lucide-react';
 import { useStore } from '../../store';
@@ -172,8 +172,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
           case 'heading': {
             const level = node.attrs?.level || 1;
             const children = node.content?.map(renderNode);
-            const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
-            return <HeadingTag key={key} className="note-heading">{children}</HeadingTag>;
+            return React.createElement(`h${level}`, { key, className: 'note-heading' }, children);
           }
 
           case 'paragraph': {
