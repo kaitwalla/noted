@@ -31,7 +31,18 @@ final class APIService {
 
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        // Go's time.Time marshals with fractional seconds (RFC3339Nano)
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        let isoFractional = ISO8601DateFormatter()
+        isoFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let str = try container.decode(String.self)
+            if let date = isoFractional.date(from: str) { return date }
+            if let date = isoFormatter.date(from: str) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date: \(str)")
+        }
         return decoder
     }()
 
@@ -253,6 +264,10 @@ final class APIService {
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                print("[API] Decode FAILED for \(T.self) from \(path): \(error)")
+                if let json = String(data: data.prefix(4000), encoding: .utf8) {
+                    print("[API] Response: \(json)")
+                }
                 throw APIError.decodingError(error)
             }
         case 401:
@@ -384,26 +399,18 @@ extension APIService {
     }
 
     /// Updates an existing note
-    /// - Parameters:
-    ///   - noteId: The note UUID
-    ///   - plainText: New plain text content
-    ///   - isTodo: Whether the note is a todo
-    ///   - isDone: Whether the todo is done
-    /// - Returns: Updated note
-    func updateNote(noteId: UUID, plainText: String, isTodo: Bool? = nil, isDone: Bool? = nil) async throws -> Note {
+    func updateNote(noteId: UUID, content: NoteContent, plainText: String) async throws -> Note {
         struct UpdateRequest: Encodable {
+            let content: NoteContent
             let plainText: String
-            let isTodo: Bool?
-            let isDone: Bool?
 
             enum CodingKeys: String, CodingKey {
+                case content
                 case plainText = "plain_text"
-                case isTodo = "is_todo"
-                case isDone = "is_done"
             }
         }
 
-        let request = UpdateRequest(plainText: plainText, isTodo: isTodo, isDone: isDone)
+        let request = UpdateRequest(content: content, plainText: plainText)
         return try await put("notes/\(noteId.uuidString)", body: request)
     }
 

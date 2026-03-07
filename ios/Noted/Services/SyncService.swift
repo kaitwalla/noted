@@ -103,11 +103,16 @@ final class SyncService {
         // Merge notes
         localData.mergeRemoteNotes(response.notes)
 
-        // Remove deleted items
-        localData.removeDeletedItems(
-            notebookIds: response.deletedNotebookIds,
-            noteIds: response.deletedNoteIds
-        )
+        // Remove deleted items (server may send these as explicit lists or via deletedAt on entities)
+        let deletedNotebookIds = response.deletedNotebookIds ?? response.notebooks.filter { $0.deletedAt != nil }.map { $0.id }
+        let deletedNoteIds = response.deletedNoteIds ?? response.notes.filter { $0.deletedAt != nil }.map { $0.id }
+
+        if !deletedNotebookIds.isEmpty || !deletedNoteIds.isEmpty {
+            localData.removeDeletedItems(
+                notebookIds: deletedNotebookIds,
+                noteIds: deletedNoteIds
+            )
+        }
     }
 
     // MARK: - Initial Load

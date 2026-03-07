@@ -218,8 +218,8 @@ struct NoteStreamView: View {
                             NoteBubbleView(
                                 note: note,
                                 images: noteImages[note.id] ?? [],
-                                onCheckboxToggle: { newText in
-                                    Task { await updateNoteText(note: note, newText: newText) }
+                                onContentChanged: { newContent, newPlainText in
+                                    Task { await updateNoteContent(note: note, content: newContent, plainText: newPlainText) }
                                 }
                             )
 
@@ -235,15 +235,6 @@ struct NoteStreamView: View {
                                 startEditing(note)
                             } label: {
                                 Label("Edit", systemImage: "pencil")
-                            }
-
-                            if note.isTodo {
-                                Button {
-                                    Task { await toggleTodo(note) }
-                                } label: {
-                                    Label(note.isDone ? "Mark Incomplete" : "Mark Complete",
-                                          systemImage: note.isDone ? "circle" : "checkmark.circle")
-                                }
                             }
 
                             // Show conflict resolution option if this note has a conflict
@@ -317,9 +308,7 @@ struct NoteStreamView: View {
             // Update locally first
             if let updatedLocal = try dataStore.updateLocalNote(
                 id: note.id,
-                plainText: newText,
-                isTodo: note.isTodo,
-                isDone: note.isDone
+                plainText: newText
             ) {
                 let updatedNote = Note(from: updatedLocal)
                 if let index = notes.firstIndex(where: { $0.id == note.id }) {
@@ -341,40 +330,13 @@ struct NoteStreamView: View {
         }
     }
 
-    private func toggleTodo(_ note: Note) async {
+    private func updateNoteContent(note: Note, content: NoteContent, plainText: String) async {
         do {
             // Update locally first
             if let updatedLocal = try dataStore.updateLocalNote(
                 id: note.id,
-                plainText: note.plainText,
-                isTodo: note.isTodo,
-                isDone: !note.isDone
-            ) {
-                let updatedNote = Note(from: updatedLocal)
-                if let index = notes.firstIndex(where: { $0.id == note.id }) {
-                    notes[index] = updatedNote
-                }
-                noteSyncStatus[note.id] = updatedLocal.syncStatus
-            }
-
-            // Try to sync if online
-            if appViewModel.isOnline {
-                await syncService.syncNote(id: note.id)
-                loadNotesFromLocal()
-            }
-        } catch {
-            showError(error.localizedDescription)
-        }
-    }
-
-    private func updateNoteText(note: Note, newText: String) async {
-        do {
-            // Update locally first
-            if let updatedLocal = try dataStore.updateLocalNote(
-                id: note.id,
-                plainText: newText,
-                isTodo: note.isTodo,
-                isDone: note.isDone
+                plainText: plainText,
+                content: content
             ) {
                 let updatedNote = Note(from: updatedLocal)
                 if let index = notes.firstIndex(where: { $0.id == note.id }) {

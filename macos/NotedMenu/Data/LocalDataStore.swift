@@ -148,8 +148,6 @@ final class LocalDataStore {
         if let local = existing.first {
             local.plainText = note.plainText
             local.contentJSON = contentJSON
-            local.isTodo = note.isTodo
-            local.isDone = note.isDone
             local.version = note.version
             local.updatedAt = note.updatedAt
             local.deletedAt = note.deletedAt
@@ -167,8 +165,6 @@ final class LocalDataStore {
                 notebookId: note.notebookId,
                 plainText: note.plainText,
                 contentJSON: contentJSON,
-                isTodo: note.isTodo,
-                isDone: note.isDone,
                 version: note.version,
                 createdAt: note.createdAt,
                 updatedAt: note.updatedAt,
@@ -185,9 +181,7 @@ final class LocalDataStore {
 
     func createLocalNote(
         notebookId: UUID,
-        plainText: String,
-        isTodo: Bool = false,
-        isDone: Bool = false
+        plainText: String
     ) throws -> LocalNote {
         guard let context = context else { throw LocalDataStoreError.notInitialized }
 
@@ -200,8 +194,6 @@ final class LocalDataStore {
             notebookId: notebookId,
             plainText: plainText,
             contentJSON: contentJSON,
-            isTodo: isTodo,
-            isDone: isDone,
             version: 1,
             createdAt: Date(),
             updatedAt: Date(),
@@ -219,8 +211,7 @@ final class LocalDataStore {
     func updateLocalNote(
         id: UUID,
         plainText: String,
-        isTodo: Bool? = nil,
-        isDone: Bool? = nil
+        content: NoteContent? = nil
     ) throws -> LocalNote? {
         guard let context = context else { throw LocalDataStoreError.notInitialized }
 
@@ -230,16 +221,9 @@ final class LocalDataStore {
         guard let note = try context.fetch(descriptor).first else { return nil }
 
         let encoder = JSONEncoder()
-        let content = NoteContent.text(plainText)
+        let noteContent = content ?? NoteContent.text(plainText)
         note.plainText = plainText
-        note.contentJSON = String(data: try encoder.encode(content), encoding: .utf8) ?? "{}"
-
-        if let isTodo = isTodo {
-            note.isTodo = isTodo
-        }
-        if let isDone = isDone {
-            note.isDone = isDone
-        }
+        note.contentJSON = String(data: try encoder.encode(noteContent), encoding: .utf8) ?? "{}"
 
         note.updatedAt = Date()
         note.version += 1
@@ -487,8 +471,6 @@ final class LocalDataStore {
                     encoder.dateEncodingStrategy = .iso8601
                     note.plainText = serverNote.plainText
                     note.contentJSON = String(data: (try? encoder.encode(serverNote.content)) ?? Data(), encoding: .utf8) ?? "{}"
-                    note.isTodo = serverNote.isTodo
-                    note.isDone = serverNote.isDone
                     note.version = serverNote.version
                     note.updatedAt = serverNote.updatedAt
                     note.serverVersion = serverNote.version

@@ -30,7 +30,7 @@ private enum DateFormatters {
 struct NoteBubbleView: View {
     let note: Note
     let images: [NoteImage]
-    var onCheckboxToggle: ((String) -> Void)?
+    var onContentChanged: ((NoteContent, String) -> Void)?
 
     @Environment(\.themeColors) var themeColors
     @State private var loadedImages: [UUID: NSImage] = [:]
@@ -38,35 +38,24 @@ struct NoteBubbleView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Todo checkbox + content
-            HStack(alignment: .top, spacing: 8) {
-                if note.isTodo {
-                    Image(systemName: note.isDone ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(note.isDone ? themeColors.success : themeColors.secondaryText)
-                        .font(.system(size: 14))
+            VStack(alignment: .leading, spacing: 4) {
+                // Note content rendered from Tiptap JSON
+                TiptapContentView(
+                    content: note.content,
+                    plainText: note.plainText,
+                    textColor: themeColors.text,
+                    onContentChanged: onContentChanged
+                )
+
+                // Images
+                if !images.isEmpty {
+                    imageGrid
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    // Note content with markdown (interactive checkboxes)
-                    if !note.plainText.isEmpty && note.plainText != "[image]" {
-                        MarkdownContentView(
-                            text: note.plainText,
-                            textColor: Color(note.isDone ? themeColors.secondaryText : themeColors.text),
-                            onCheckboxToggle: onCheckboxToggle
-                        )
-                        .strikethrough(note.isDone)
-                    }
-
-                    // Images
-                    if !images.isEmpty {
-                        imageGrid
-                    }
-
-                    // Link previews
-                    if let previews = note.linkPreviews, !previews.isEmpty {
-                        ForEach(previews) { preview in
-                            LinkPreviewCard(preview: preview)
-                        }
+                // Link previews
+                if let previews = note.linkPreviews, !previews.isEmpty {
+                    ForEach(previews) { preview in
+                        LinkPreviewCard(preview: preview)
                     }
                 }
             }
@@ -76,6 +65,7 @@ struct NoteBubbleView: View {
                 .font(.caption2)
                 .foregroundColor(themeColors.secondaryText)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .background(themeColors.secondaryBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10))

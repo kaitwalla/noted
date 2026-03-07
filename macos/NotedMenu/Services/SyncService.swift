@@ -100,9 +100,7 @@ final class SyncService: ObservableObject {
 
                 let request = NoteCreateRequest(
                     content: content,
-                    plainText: note.plainText,
-                    isTodo: note.isTodo,
-                    isDone: note.isDone
+                    plainText: note.plainText
                 )
 
                 let serverNote: Note = try await APIService.shared.post(
@@ -133,11 +131,12 @@ final class SyncService: ObservableObject {
                 }
 
                 // No conflict, push update
+                let decoder = JSONDecoder()
+                let updateContent = (try? decoder.decode(NoteContent.self, from: note.contentJSON.data(using: .utf8) ?? Data())) ?? NoteContent.text(note.plainText)
                 let updatedNote = try await APIService.shared.updateNote(
                     noteId: note.id,
-                    plainText: note.plainText,
-                    isTodo: note.isTodo,
-                    isDone: note.isDone
+                    content: updateContent,
+                    plainText: note.plainText
                 )
 
                 // Use the server's response version for accurate sync tracking

@@ -18,15 +18,20 @@ struct SyncRequest: Codable {
 struct SyncResponse: Codable {
     let notebooks: [Notebook]
     let notes: [Note]
-    let deletedNotebookIds: [UUID]
-    let deletedNoteIds: [UUID]
-    let syncedAt: Date
+    let tags: [Tag]?
+    let serverTime: Date?
+    let hasConflict: Bool?
+
+    // Support both server formats
+    let deletedNotebookIds: [UUID]?
+    let deletedNoteIds: [UUID]?
 
     enum CodingKeys: String, CodingKey {
-        case notebooks, notes
+        case notebooks, notes, tags
+        case serverTime = "server_time"
+        case hasConflict = "has_conflict"
         case deletedNotebookIds = "deleted_notebook_ids"
         case deletedNoteIds = "deleted_note_ids"
-        case syncedAt = "synced_at"
     }
 }
 

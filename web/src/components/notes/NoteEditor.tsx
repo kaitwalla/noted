@@ -3,7 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TiptapImage from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Send, CheckSquare, Image, Clock, Tag, X } from 'lucide-react';
+import { Send, Image, Clock, Tag, X } from 'lucide-react';
 import { useStore } from '../../store';
 import { api } from '../../api/client';
 import { format } from 'date-fns';
@@ -14,7 +14,6 @@ interface PendingImage {
 }
 
 export function NoteEditor() {
-  const [isTodo, setIsTodo] = useState(false);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [reminderDate, setReminderDate] = useState<string>('');
@@ -59,7 +58,7 @@ export function NoteEditor() {
         selectedNotebookId,
         content,
         plainText || '(image)',
-        isTodo,
+        false,
         selectedTagIds,
         reminderDate ? new Date(reminderDate).toISOString() : undefined
       );
@@ -79,7 +78,6 @@ export function NoteEditor() {
       }
 
       editor.commands.clearContent();
-      setIsTodo(false);
       setSelectedTagIds([]);
       setReminderDate('');
       setShowReminderPicker(false);
@@ -220,14 +218,6 @@ export function NoteEditor() {
 
       <div className="editor-toolbar">
         <div className="toolbar-left">
-          <button
-            className={`toolbar-btn ${isTodo ? 'active' : ''}`}
-            onClick={() => setIsTodo(!isTodo)}
-            title="Make this a to-do"
-          >
-            <CheckSquare size={18} />
-          </button>
-
           <div className="toolbar-dropdown">
             <button
               className={`toolbar-btn ${selectedTagIds.length > 0 ? 'active' : ''}`}

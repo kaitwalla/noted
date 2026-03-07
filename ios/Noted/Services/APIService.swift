@@ -5,14 +5,26 @@ final class APIService {
 
     // Configure this for your environment
     #if DEBUG
-    private let baseURL = URL(string: "http://localhost:8080/api")!
+    private let baseURL = URL(string: "http://localhost:8081/api")!
     #else
     private let baseURL = URL(string: "https://api.noted.app/api")!
     #endif
 
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        // Go's time.Time marshals with fractional seconds (RFC3339Nano)
+        // Swift's .iso8601 doesn't handle fractional seconds, so use a custom strategy
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        let isoFractional = ISO8601DateFormatter()
+        isoFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let str = try container.decode(String.self)
+            if let date = isoFractional.date(from: str) { return date }
+            if let date = isoFormatter.date(from: str) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date: \(str)")
+        }
         return decoder
     }()
 
@@ -216,6 +228,10 @@ final class APIService {
             do {
                 return try decoder.decode(T.self, from: data)
             } catch {
+                print("[API] Decode FAILED for \(T.self) from \(path): \(error)")
+                if let json = String(data: data.prefix(4000), encoding: .utf8) {
+                    print("[API] Response: \(json)")
+                }
                 throw APIError.decodingError(error)
             }
         case 401:

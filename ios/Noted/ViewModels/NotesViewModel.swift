@@ -115,11 +115,9 @@ final class NotesViewModel {
     }
 
     @MainActor
-    func toggleTodo(_ id: UUID) async {
-        guard let note = notes.first(where: { $0.id == id }) else { return }
-
-        // Toggle locally first
-        if let updated = localData.updateNote(id: id, isDone: !note.isDone) {
+    func updateNoteContent(_ id: UUID, content: NoteContent, plainText: String) async {
+        // Update locally with the new Tiptap content
+        if let updated = localData.updateNote(id: id, content: content, plainText: plainText) {
             if let index = notes.firstIndex(where: { $0.id == id }) {
                 notes[index] = updated
             }

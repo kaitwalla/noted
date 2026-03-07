@@ -6,7 +6,7 @@ struct NoteBubble: View {
     var images: [NoteImage] = []
     let onEdit: (String) -> Void
     let onDelete: () -> Void
-    let onToggleTodo: () -> Void
+    var onContentChanged: ((NoteContent, String) -> Void)?
 
     @Environment(\.themeColors) private var colors
     @State private var isEditing = false
@@ -40,33 +40,23 @@ struct NoteBubble: View {
                     }
                 }
 
-                // Text content (if any)
+                // Text content rendered from Tiptap JSON
                 if !note.plainText.isEmpty {
-                    // Bubble content
-                    HStack(spacing: 8) {
-                        if note.isTodo {
-                            Button {
-                                HapticService.shared.selection()
-                                onToggleTodo()
-                            } label: {
-                                Image(systemName: note.isDone ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(note.isDone ? colors.success : colors.secondaryText)
-                                    .contentTransition(.symbolEffect(.replace))
-                            }
-                            .buttonStyle(.plain)
-                        }
-
-                        Text(note.content.content)
-                            .strikethrough(note.isTodo && note.isDone)
-                            .foregroundStyle(note.isTodo && note.isDone ? colors.secondaryText : colors.text)
-                    }
+                    TiptapContentView(
+                        content: note.content,
+                        textColor: colors.text,
+                        accentColor: colors.accent,
+                        successColor: colors.success,
+                        secondaryTextColor: colors.secondaryText,
+                        onContentChanged: onContentChanged
+                    )
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(colors.accent.opacity(0.15))
                     .cornerRadius(18)
                     .contextMenu {
                         Button {
-                            editText = note.content.content
+                            editText = note.plainText
                             isEditing = true
                         } label: {
                             Label("Edit", systemImage: "pencil")
@@ -74,7 +64,7 @@ struct NoteBubble: View {
 
                         Button {
                             HapticService.shared.lightTap()
-                            UIPasteboard.general.string = note.content.content
+                            UIPasteboard.general.string = note.plainText
                         } label: {
                             Label("Copy", systemImage: "doc.on.doc")
                         }
@@ -182,27 +172,7 @@ struct EditNoteSheet: View {
                 deletedAt: nil
             ),
             onEdit: { _ in },
-            onDelete: {},
-            onToggleTodo: {}
-        )
-
-        NoteBubble(
-            note: Note(
-                id: UUID(),
-                notebookId: UUID(),
-                content: .text("This is a todo item"),
-                plainText: "This is a todo item",
-                isTodo: true,
-                isDone: false,
-                reminderAt: nil,
-                version: 1,
-                createdAt: Date(),
-                updatedAt: Date(),
-                deletedAt: nil
-            ),
-            onEdit: { _ in },
-            onDelete: {},
-            onToggleTodo: {}
+            onDelete: {}
         )
     }
     .padding()

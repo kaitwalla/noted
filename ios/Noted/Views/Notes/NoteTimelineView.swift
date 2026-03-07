@@ -49,9 +49,9 @@ struct NoteTimelineView: View {
                                                     await viewModel.deleteNote(note.id)
                                                 }
                                             },
-                                            onToggleTodo: {
+                                            onContentChanged: { newContent, newPlainText in
                                                 Task {
-                                                    await viewModel.toggleTodo(note.id)
+                                                    await viewModel.updateNoteContent(note.id, content: newContent, plainText: newPlainText)
                                                 }
                                             }
                                         )

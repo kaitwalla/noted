@@ -16,12 +16,6 @@ final class LocalNote {
     /// JSON-encoded content structure (type and formatted content)
     var contentJSON: String
 
-    /// Whether this note is a todo item
-    var isTodo: Bool
-
-    /// Whether this todo is completed
-    var isDone: Bool
-
     /// Note version for conflict detection
     var version: Int
 
@@ -58,8 +52,6 @@ final class LocalNote {
         notebookId: UUID,
         plainText: String,
         contentJSON: String,
-        isTodo: Bool = false,
-        isDone: Bool = false,
         version: Int = 1,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -73,8 +65,6 @@ final class LocalNote {
         self.notebookId = notebookId
         self.plainText = plainText
         self.contentJSON = contentJSON
-        self.isTodo = isTodo
-        self.isDone = isDone
         self.version = version
         self.createdAt = createdAt
         self.updatedAt = updatedAt

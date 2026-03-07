@@ -134,9 +134,7 @@ struct NoteInputView: View {
 
                 let request = NoteCreateRequest(
                     content: .text(content),
-                    plainText: content,
-                    isTodo: false,
-                    isDone: false
+                    plainText: content
                 )
 
                 let note: Note = try await APIService.shared.post(

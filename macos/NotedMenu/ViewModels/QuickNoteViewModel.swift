@@ -39,9 +39,7 @@ final class QuickNoteViewModel: ObservableObject {
             // Create local note
             let localNote = try dataStore.createLocalNote(
                 notebookId: notebookId,
-                plainText: content,
-                isTodo: false,
-                isDone: false
+                plainText: content
             )
 
             // Save images locally
@@ -107,9 +105,7 @@ final class QuickNoteViewModel: ObservableObject {
             let content = hasText ? noteText : ""
             let request = NoteCreateRequest(
                 content: .text(content),
-                plainText: content,
-                isTodo: false,
-                isDone: false
+                plainText: content
             )
 
             let note: Note = try await APIService.shared.post("notebooks/\(notebookId.uuidString)/notes", body: request)

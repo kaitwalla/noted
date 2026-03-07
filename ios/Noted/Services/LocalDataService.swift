@@ -153,6 +153,21 @@ final class LocalDataService {
         return toNote(entity)
     }
 
+    func updateNote(id: UUID, content: NoteContent, plainText: String) -> Note? {
+        guard let entity = fetchNoteEntity(id: id) else { return nil }
+
+        entity.content = try? encoder.encode(content)
+        entity.plainText = plainText
+        entity.updatedAt = Date()
+        entity.version += 1
+        entity.syncStatus = SyncStatus.pending.rawValue
+        entity.locallyModifiedAt = Date()
+
+        stack.save()
+
+        return toNote(entity)
+    }
+
     func deleteNote(id: UUID) {
         guard let entity = fetchNoteEntity(id: id) else { return }
 
