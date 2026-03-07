@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, isValid } from 'date-fns';
-import { Check, Circle, Trash2, Edit2, Globe, GlobeLock, Link2 } from 'lucide-react';
+import { Trash2, Edit2, Globe, GlobeLock, Link2 } from 'lucide-react';
 import { useStore } from '../../store';
 import { api } from '../../api/client';
 import type { Note } from '../../types';
@@ -16,7 +16,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [images, setImages] = useState<Array<{ id: string; url: string }>>([]);
   const [copied, setCopied] = useState(false);
-  const { toggleNoteDone, toggleNotePublic, removeNote, updateNote } = useStore();
+  const { toggleNotePublic, removeNote, updateNote } = useStore();
 
   // Fetch images for this note (re-fetch when note object changes)
   useEffect(() => {
@@ -26,12 +26,6 @@ export function NoteBubble({ note }: NoteBubbleProps) {
       setImages([]);
     });
   }, [note]);
-
-  const handleToggle = () => {
-    if (note.is_todo) {
-      toggleNoteDone(note.id);
-    }
-  };
 
   const handleDelete = () => {
     if (confirm('Delete this note?')) {
@@ -270,13 +264,8 @@ export function NoteBubble({ note }: NoteBubbleProps) {
 
   return (
     <>
-      <div className={`note-bubble ${note.is_todo ? 'is-todo' : ''} ${note.is_done ? 'is-done' : ''}`}>
-        {note.is_todo && (
-          <button className="todo-checkbox" onClick={handleToggle}>
-            {note.is_done ? <Check size={16} /> : <Circle size={16} />}
-          </button>
-        )}
-        <div className={`note-content ${note.is_done ? 'strikethrough' : ''}`}>
+      <div className="note-bubble">
+        <div className="note-content">
           {renderContent()}
           {images.length > 0 && (
             <div className="note-images">
