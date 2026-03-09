@@ -806,6 +806,53 @@ func (s *PostgresStore) SetNoteLinkPreviews(ctx context.Context, noteID uuid.UUI
 	return nil
 }
 
+// --- App Release Operations ---
+
+func (s *PostgresStore) UpsertAppRelease(ctx context.Context, release *models.AppRelease) error {
+	query := `
+		INSERT INTO app_releases (platform, version, build, release_notes, download_url, minimum_os_version, ed_signature, file_length, published_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		ON CONFLICT (platform) DO UPDATE SET
+			version = EXCLUDED.version,
+			build = EXCLUDED.build,
+			release_notes = EXCLUDED.release_notes,
+			download_url = EXCLUDED.download_url,
+			minimum_os_version = EXCLUDED.minimum_os_version,
+			ed_signature = EXCLUDED.ed_signature,
+			file_length = EXCLUDED.file_length,
+			published_at = EXCLUDED.published_at,
+			updated_at = EXCLUDED.updated_at
+	`
+	_, err := s.pool.Exec(ctx, query,
+		release.Platform, release.Version, release.Build, release.ReleaseNotes,
+		release.DownloadURL, release.MinimumOSVersion, release.EdSignature,
+		release.FileLength, release.PublishedAt, release.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("failed to upsert app release: %w", err)
+	}
+	return nil
+}
+
+func (s *PostgresStore) GetAppRelease(ctx context.Context, platform string) (*models.AppRelease, error) {
+	query := `
+		SELECT platform, version, build, release_notes, download_url, minimum_os_version, ed_signature, file_length, published_at, updated_at
+		FROM app_releases
+		WHERE platform = $1
+	`
+	var release models.AppRelease
+	err := s.pool.QueryRow(ctx, query, platform).Scan(
+		&release.Platform, &release.Version, &release.Build, &release.ReleaseNotes,
+		&release.DownloadURL, &release.MinimumOSVersion, &release.EdSignature,
+		&release.FileLength, &release.PublishedAt, &release.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("failed to get app release: %w", err)
+	}
+	return &release, nil
+}
+
 // Helper functions
 
 func scanNotes(rows pgx.Rows) ([]models.Note, error) {

@@ -16,7 +16,14 @@ type Store interface {
 	TagStore
 	ImageStore
 	LinkPreviewStore
+	AppReleaseStore
 	Close() error
+}
+
+// AppReleaseStore handles app release data operations
+type AppReleaseStore interface {
+	UpsertAppRelease(ctx context.Context, release *models.AppRelease) error
+	GetAppRelease(ctx context.Context, platform string) (*models.AppRelease, error)
 }
 
 // UserStore handles user data operations

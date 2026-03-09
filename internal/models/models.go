@@ -109,6 +109,20 @@ type AuthResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// AppRelease represents app release info for a platform (persisted to DB)
+type AppRelease struct {
+	Platform         string    `json:"platform"`
+	Version          string    `json:"version"`
+	Build            int       `json:"build"`
+	ReleaseNotes     string    `json:"release_notes"`
+	DownloadURL      string    `json:"download_url"`
+	MinimumOSVersion string    `json:"minimum_os_version"`
+	EdSignature      string    `json:"ed_signature"`
+	FileLength       int64     `json:"file_length"`
+	PublishedAt      time.Time `json:"published_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
 // CreateNotebookRequest represents a request to create a notebook
 type CreateNotebookRequest struct {
 	Title string `json:"title"`
