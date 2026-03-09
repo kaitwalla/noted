@@ -315,8 +315,7 @@ func (s *Server) handleSparkleAppcast(w http.ResponseWriter, r *http.Request) {
       <sparkle:minimumSystemVersion>%s</sparkle:minimumSystemVersion>
       <pubDate>%s</pubDate>
       <description><![CDATA[
-        <h2>What's New in %s</h2>
-        <p>%s</p>
+        %s
       ]]></description>
       <enclosure
         url="%s"
@@ -326,8 +325,7 @@ func (s *Server) handleSparkleAppcast(w http.ResponseWriter, r *http.Request) {
 		info.Version,
 		info.MinimumOSVersion,
 		publishedAt.Format(time.RFC1123Z),
-		info.Version,
-		escapeXML(info.ReleaseNotes),
+		info.ReleaseNotes,
 		info.DownloadURL,
 	)
 
