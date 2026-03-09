@@ -35,7 +35,9 @@ export function NoteTimeline() {
     }
   }, [notes.length, selectedNotebookId]);
 
-  const groupedNotes = groupNotesByDate(notes);
+  const starredNotes = notes.filter((n) => n.is_starred);
+  const unstarredNotes = notes.filter((n) => !n.is_starred);
+  const groupedNotes = groupNotesByDate(unstarredNotes);
 
   if (!selectedNotebookId) {
     return (
@@ -66,6 +68,16 @@ export function NoteTimeline() {
         {notes.length === 0 && (
           <div className="empty-notes">
             <p>No notes yet. Start typing below to add your first note.</p>
+          </div>
+        )}
+        {starredNotes.length > 0 && (
+          <div className="starred-section">
+            <div className="date-divider starred-divider">
+              <span>Starred</span>
+            </div>
+            {starredNotes.map((note) => (
+              <NoteBubble key={note.id} note={note} />
+            ))}
           </div>
         )}
       </div>

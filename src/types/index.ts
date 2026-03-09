@@ -24,6 +24,7 @@ export interface Note {
   is_todo: boolean;
   is_done: boolean;
   is_public: boolean;
+  is_starred: boolean;
   reminder_at?: string;
   version: number;
   created_at: string;
@@ -84,6 +85,7 @@ export interface UpdateNoteRequest {
   is_todo?: boolean;
   is_done?: boolean;
   is_public?: boolean;
+  is_starred?: boolean;
   reminder_at?: string;
   tag_ids?: string[];
 }
