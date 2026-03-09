@@ -38,6 +38,7 @@ type Note struct {
 	IsTodo       bool            `json:"is_todo"`
 	IsDone       bool            `json:"is_done"`
 	IsPublic     bool            `json:"is_public"`
+	IsStarred    bool            `json:"is_starred"`
 	ReminderAt   *time.Time      `json:"reminder_at,omitempty"`
 	Version      int64           `json:"version"`
 	CreatedAt    time.Time       `json:"created_at"`
@@ -135,6 +136,7 @@ type UpdateNoteRequest struct {
 	IsTodo     *bool           `json:"is_todo,omitempty"`
 	IsDone     *bool           `json:"is_done,omitempty"`
 	IsPublic   *bool           `json:"is_public,omitempty"`
+	IsStarred  *bool           `json:"is_starred,omitempty"`
 	ReminderAt *time.Time      `json:"reminder_at,omitempty"`
 	TagIDs     []uuid.UUID     `json:"tag_ids,omitempty"`
 }

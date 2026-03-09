@@ -254,12 +254,12 @@ func (s *PostgresStore) GetNotebooksSince(ctx context.Context, userID uuid.UUID,
 
 func (s *PostgresStore) CreateNote(ctx context.Context, note *models.Note) error {
 	query := `
-		INSERT INTO notes (id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO notes (id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 	_, err := s.pool.Exec(ctx, query,
 		note.ID, note.NotebookID, note.UserID, note.Content, note.PlainText,
-		note.IsTodo, note.IsDone, note.IsPublic, note.ReminderAt, note.Version,
+		note.IsTodo, note.IsDone, note.IsPublic, note.IsStarred, note.ReminderAt, note.Version,
 		note.CreatedAt, note.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create note: %w", err)
@@ -269,7 +269,7 @@ func (s *PostgresStore) CreateNote(ctx context.Context, note *models.Note) error
 
 func (s *PostgresStore) GetNoteByID(ctx context.Context, id uuid.UUID) (*models.Note, error) {
 	query := `
-		SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+		SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 		FROM notes
 		WHERE id = $1
 	`
@@ -277,7 +277,7 @@ func (s *PostgresStore) GetNoteByID(ctx context.Context, id uuid.UUID) (*models.
 	var content []byte
 	err := s.pool.QueryRow(ctx, query, id).Scan(
 		&note.ID, &note.NotebookID, &note.UserID, &content, &note.PlainText,
-		&note.IsTodo, &note.IsDone, &note.IsPublic, &note.ReminderAt, &note.Version,
+		&note.IsTodo, &note.IsDone, &note.IsPublic, &note.IsStarred, &note.ReminderAt, &note.Version,
 		&note.CreatedAt, &note.UpdatedAt, &note.DeletedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -291,7 +291,7 @@ func (s *PostgresStore) GetNoteByID(ctx context.Context, id uuid.UUID) (*models.
 
 func (s *PostgresStore) GetPublicNoteByID(ctx context.Context, id uuid.UUID) (*models.Note, error) {
 	query := `
-		SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+		SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 		FROM notes
 		WHERE id = $1 AND is_public = TRUE AND deleted_at IS NULL
 	`
@@ -299,7 +299,7 @@ func (s *PostgresStore) GetPublicNoteByID(ctx context.Context, id uuid.UUID) (*m
 	var content []byte
 	err := s.pool.QueryRow(ctx, query, id).Scan(
 		&note.ID, &note.NotebookID, &note.UserID, &content, &note.PlainText,
-		&note.IsTodo, &note.IsDone, &note.IsPublic, &note.ReminderAt, &note.Version,
+		&note.IsTodo, &note.IsDone, &note.IsPublic, &note.IsStarred, &note.ReminderAt, &note.Version,
 		&note.CreatedAt, &note.UpdatedAt, &note.DeletedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -317,7 +317,7 @@ func (s *PostgresStore) GetNotesByNotebookID(ctx context.Context, notebookID uui
 
 	if since != nil {
 		query = `
-			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 			FROM notes
 			WHERE notebook_id = $1 AND updated_at > $2
 			ORDER BY created_at ASC
@@ -325,7 +325,7 @@ func (s *PostgresStore) GetNotesByNotebookID(ctx context.Context, notebookID uui
 		args = []interface{}{notebookID, *since}
 	} else {
 		query = `
-			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 			FROM notes
 			WHERE notebook_id = $1 AND deleted_at IS NULL
 			ORDER BY created_at ASC
@@ -348,7 +348,7 @@ func (s *PostgresStore) GetNotesByUserID(ctx context.Context, userID uuid.UUID, 
 
 	if since != nil {
 		query = `
-			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 			FROM notes
 			WHERE user_id = $1 AND updated_at > $2
 			ORDER BY created_at ASC
@@ -356,7 +356,7 @@ func (s *PostgresStore) GetNotesByUserID(ctx context.Context, userID uuid.UUID, 
 		args = []interface{}{userID, *since}
 	} else {
 		query = `
-			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+			SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 			FROM notes
 			WHERE user_id = $1 AND deleted_at IS NULL
 			ORDER BY created_at ASC
@@ -376,12 +376,12 @@ func (s *PostgresStore) GetNotesByUserID(ctx context.Context, userID uuid.UUID, 
 func (s *PostgresStore) UpdateNote(ctx context.Context, note *models.Note) error {
 	query := `
 		UPDATE notes
-		SET content = $2, plain_text = $3, is_todo = $4, is_done = $5, is_public = $6, reminder_at = $7, version = $8, updated_at = $9
+		SET content = $2, plain_text = $3, is_todo = $4, is_done = $5, is_public = $6, is_starred = $7, reminder_at = $8, version = $9, updated_at = $10
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 	result, err := s.pool.Exec(ctx, query,
 		note.ID, note.Content, note.PlainText, note.IsTodo, note.IsDone,
-		note.IsPublic, note.ReminderAt, note.Version, note.UpdatedAt)
+		note.IsPublic, note.IsStarred, note.ReminderAt, note.Version, note.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to update note: %w", err)
 	}
@@ -406,7 +406,7 @@ func (s *PostgresStore) DeleteNote(ctx context.Context, id uuid.UUID) error {
 
 func (s *PostgresStore) SearchNotes(ctx context.Context, userID uuid.UUID, query string) ([]models.Note, error) {
 	sqlQuery := `
-		SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, reminder_at, version, created_at, updated_at, deleted_at
+		SELECT id, notebook_id, user_id, content, plain_text, is_todo, is_done, is_public, is_starred, reminder_at, version, created_at, updated_at, deleted_at
 		FROM notes
 		WHERE user_id = $1 AND deleted_at IS NULL
 		  AND to_tsvector('english', plain_text) @@ plainto_tsquery('english', $2)
@@ -815,7 +815,7 @@ func scanNotes(rows pgx.Rows) ([]models.Note, error) {
 		var content []byte
 		if err := rows.Scan(
 			&note.ID, &note.NotebookID, &note.UserID, &content, &note.PlainText,
-			&note.IsTodo, &note.IsDone, &note.IsPublic, &note.ReminderAt, &note.Version,
+			&note.IsTodo, &note.IsDone, &note.IsPublic, &note.IsStarred, &note.ReminderAt, &note.Version,
 			&note.CreatedAt, &note.UpdatedAt, &note.DeletedAt); err != nil {
 			return nil, fmt.Errorf("failed to scan note: %w", err)
 		}
