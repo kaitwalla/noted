@@ -2,83 +2,18 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
-	"os"
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/noted/server/internal/models"
+	"github.com/noted/server/internal/store"
 )
-
-// In-memory storage for app release info (persisted via env vars on restart)
-var (
-	appReleasesMu sync.RWMutex
-	appReleases   = map[string]*AppReleaseConfig{
-		"macos": {
-			Version:          "1.0",
-			Build:            2,
-			ReleaseNotes:     "Initial release with auto-update support.",
-			DownloadURL:      "",
-			MinimumOSVersion: "14.0",
-			EdSignature:      "",
-			FileLength:       0,
-			PublishedAt:      time.Now(),
-		},
-	}
-)
-
-// AppReleaseConfig holds the full release configuration including signature
-type AppReleaseConfig struct {
-	Version          string    `json:"version"`
-	Build            int       `json:"build"`
-	ReleaseNotes     string    `json:"release_notes"`
-	DownloadURL      string    `json:"download_url"`
-	MinimumOSVersion string    `json:"minimum_os_version"`
-	EdSignature      string    `json:"ed_signature"`
-	FileLength       int64     `json:"file_length"`
-	PublishedAt      time.Time `json:"published_at"`
-}
-
-func init() {
-	// Load from environment variables on startup
-	loadReleaseFromEnv("macos")
-}
-
-func loadReleaseFromEnv(platform string) {
-	appReleasesMu.Lock()
-	defer appReleasesMu.Unlock()
-
-	upper := strings.ToUpper(platform)
-	release, ok := appReleases[platform]
-	if !ok {
-		release = &AppReleaseConfig{}
-		appReleases[platform] = release
-	}
-
-	if v := os.Getenv("APP_VERSION_" + upper); v != "" {
-		release.Version = v
-	}
-	if b := os.Getenv("APP_BUILD_" + upper); b != "" {
-		release.Build, _ = strconv.Atoi(b)
-	}
-	if url := os.Getenv("APP_DOWNLOAD_URL_" + upper); url != "" {
-		release.DownloadURL = url
-	}
-	if notes := os.Getenv("APP_RELEASE_NOTES_" + upper); notes != "" {
-		release.ReleaseNotes = notes
-	}
-	if sig := os.Getenv("APP_ED_SIGNATURE_" + upper); sig != "" {
-		release.EdSignature = sig
-	}
-	if length := os.Getenv("APP_FILE_LENGTH_" + upper); length != "" {
-		release.FileLength, _ = strconv.ParseInt(length, 10, 64)
-	}
-	if minOS := os.Getenv("APP_MIN_OS_" + upper); minOS != "" {
-		release.MinimumOSVersion = minOS
-	}
-}
 
 // AppUpdateInfo represents version information for a native app
 type AppUpdateInfo struct {
@@ -88,24 +23,6 @@ type AppUpdateInfo struct {
 	DownloadURL      string `json:"download_url"`
 	MinimumOSVersion string `json:"minimum_os_version,omitempty"`
 	PublishedAt      string `json:"published_at,omitempty"`
-}
-
-// App version configuration (in production, these would come from config/DB)
-var appVersions = map[string]AppUpdateInfo{
-	"macos": {
-		Version:          "1.0",
-		Build:            2,
-		ReleaseNotes:     "Initial release with auto-update support.",
-		DownloadURL:      "https://github.com/kaitcollins/noted/releases/latest/download/Noted.dmg",
-		MinimumOSVersion: "14.0",
-	},
-	"ios": {
-		Version:          "1.0",
-		Build:            1,
-		ReleaseNotes:     "Initial release.",
-		DownloadURL:      "https://apps.apple.com/app/noted/id123456789", // Placeholder
-		MinimumOSVersion: "17.0",
-	},
 }
 
 // handleGetAppUpdate returns version info for a platform if an update is available
@@ -133,13 +50,12 @@ func (s *Server) handleGetAppUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// Parse User-Agent: "Noted/1.0 (macOS; Build 1)"
 	if strings.HasPrefix(userAgent, "Noted/") {
-		parts := strings.Split(userAgent, " ")
-		if len(parts) >= 1 {
-			versionPart := strings.TrimPrefix(parts[0], "Noted/")
+		uaParts := strings.Split(userAgent, " ")
+		if len(uaParts) >= 1 {
+			versionPart := strings.TrimPrefix(uaParts[0], "Noted/")
 			currentVersion = versionPart
 		}
-		// Extract build number
-		for _, part := range parts {
+		for _, part := range uaParts {
 			if strings.HasPrefix(part, "Build") {
 				buildStr := strings.TrimPrefix(part, "Build")
 				buildStr = strings.Trim(buildStr, " )")
@@ -160,48 +76,38 @@ func (s *Server) handleGetAppUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Check for environment variable overrides (for development/testing)
-	if envVersion := os.Getenv("APP_VERSION_" + strings.ToUpper(platform)); envVersion != "" {
-		if info, ok := appVersions[platform]; ok {
-			info.Version = envVersion
-			appVersions[platform] = info
+	// Get latest release from database
+	release, err := s.store.GetAppRelease(r.Context(), platform)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "unknown_platform", "Unknown platform: "+platform)
+			return
 		}
-	}
-	if envBuild := os.Getenv("APP_BUILD_" + strings.ToUpper(platform)); envBuild != "" {
-		if build, err := strconv.Atoi(envBuild); err == nil {
-			if info, ok := appVersions[platform]; ok {
-				info.Build = build
-				appVersions[platform] = info
-			}
-		}
-	}
-
-	// Get latest version for platform
-	info, ok := appVersions[platform]
-	if !ok {
-		respondError(w, http.StatusNotFound, "unknown_platform", "Unknown platform: "+platform)
+		respondError(w, http.StatusInternalServerError, "server_error", "Failed to get release info")
 		return
 	}
 
 	// Check if update is available
-	// Compare build numbers (more reliable than version strings)
-	if currentBuild >= info.Build {
-		// Also check version string as fallback
-		if !isNewerVersion(info.Version, currentVersion) {
-			// No update available
+	if currentBuild >= release.Build {
+		if !isNewerVersion(release.Version, currentVersion) {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 	}
 
-	// Update available
-	respondJSON(w, http.StatusOK, info)
+	respondJSON(w, http.StatusOK, AppUpdateInfo{
+		Version:          release.Version,
+		Build:            release.Build,
+		ReleaseNotes:     release.ReleaseNotes,
+		DownloadURL:      release.DownloadURL,
+		MinimumOSVersion: release.MinimumOSVersion,
+	})
 }
 
 // isNewerVersion returns true if newVersion is newer than currentVersion
 func isNewerVersion(newVersion, currentVersion string) bool {
 	if currentVersion == "" {
-		return true // If no current version, any version is newer
+		return true
 	}
 
 	newParts := strings.Split(newVersion, ".")
@@ -230,76 +136,48 @@ func isNewerVersion(newVersion, currentVersion string) bool {
 		}
 	}
 
-	return false // Versions are equal
+	return false
 }
 
 // handleGetAppInfo returns information about available app downloads
 func (s *Server) handleGetAppInfo(w http.ResponseWriter, r *http.Request) {
-	// Return info about all available platforms
-	info := map[string]interface{}{
-		"platforms": []map[string]interface{}{
-			{
-				"platform":     "macos",
-				"display_name": "macOS",
-				"version":      appVersions["macos"].Version,
-				"download_url": appVersions["macos"].DownloadURL,
-				"min_os":       appVersions["macos"].MinimumOSVersion,
-				"arch":         runtime.GOARCH, // Current server arch for reference
-			},
-			{
-				"platform":     "ios",
-				"display_name": "iOS",
-				"version":      appVersions["ios"].Version,
-				"download_url": appVersions["ios"].DownloadURL,
-				"min_os":       appVersions["ios"].MinimumOSVersion,
-			},
-		},
-	}
-	respondJSON(w, http.StatusOK, info)
-}
+	macRelease, _ := s.store.GetAppRelease(r.Context(), "macos")
+	iosRelease, _ := s.store.GetAppRelease(r.Context(), "ios")
 
-// SparkleAppcastItem represents a single update item in the appcast
-type SparkleAppcastItem struct {
-	Version          string
-	Build            string
-	DownloadURL      string
-	ReleaseNotes     string
-	MinimumOSVersion string
-	PublishedAt      time.Time
-	// EdDSA signature - must be generated when creating release
-	EdSignature string
-	// File size in bytes
-	Length int64
+	platforms := []map[string]interface{}{}
+
+	if macRelease != nil {
+		platforms = append(platforms, map[string]interface{}{
+			"platform":     "macos",
+			"display_name": "macOS",
+			"version":      macRelease.Version,
+			"download_url": macRelease.DownloadURL,
+			"min_os":       macRelease.MinimumOSVersion,
+			"arch":         runtime.GOARCH,
+		})
+	}
+	if iosRelease != nil {
+		platforms = append(platforms, map[string]interface{}{
+			"platform":     "ios",
+			"display_name": "iOS",
+			"version":      iosRelease.Version,
+			"download_url": iosRelease.DownloadURL,
+			"min_os":       iosRelease.MinimumOSVersion,
+		})
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"platforms": platforms,
+	})
 }
 
 // handleSparkleAppcast serves the Sparkle appcast XML for macOS auto-updates
 func (s *Server) handleSparkleAppcast(w http.ResponseWriter, r *http.Request) {
-	appReleasesMu.RLock()
-	release, ok := appReleases["macos"]
-	appReleasesMu.RUnlock()
-
-	if !ok || release.DownloadURL == "" {
-		// Fall back to defaults if no release configured
+	release, err := s.store.GetAppRelease(r.Context(), "macos")
+	if err != nil || release.DownloadURL == "" {
 		respondError(w, http.StatusNotFound, "no_release", "No macOS release configured")
 		return
 	}
-
-	info := AppUpdateInfo{
-		Version:          release.Version,
-		Build:            release.Build,
-		ReleaseNotes:     release.ReleaseNotes,
-		DownloadURL:      release.DownloadURL,
-		MinimumOSVersion: release.MinimumOSVersion,
-	}
-
-	edSignature := release.EdSignature
-	fileLength := release.FileLength
-	publishedAt := release.PublishedAt
-
-	// Build the appcast XML
-	// Note: In production, you should sign your updates with EdDSA
-	// Generate keys with: ./bin/generate_keys (from Sparkle)
-	// Sign updates with: ./bin/sign_update <path-to-update.zip>
 
 	appcastXML := fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -320,23 +198,22 @@ func (s *Server) handleSparkleAppcast(w http.ResponseWriter, r *http.Request) {
       <enclosure
         url="%s"
         type="application/octet-stream"`,
-		info.Version,
-		info.Build,
-		info.Version,
-		info.MinimumOSVersion,
-		publishedAt.Format(time.RFC1123Z),
-		info.ReleaseNotes,
-		info.DownloadURL,
+		release.Version,
+		release.Build,
+		release.Version,
+		release.MinimumOSVersion,
+		release.PublishedAt.Format(time.RFC1123Z),
+		release.ReleaseNotes,
+		release.DownloadURL,
 	)
 
-	// Add optional attributes
-	if edSignature != "" {
+	if release.EdSignature != "" {
 		appcastXML += fmt.Sprintf(`
-        sparkle:edSignature="%s"`, edSignature)
+        sparkle:edSignature="%s"`, release.EdSignature)
 	}
-	if fileLength > 0 {
+	if release.FileLength > 0 {
 		appcastXML += fmt.Sprintf(`
-        length="%d"`, fileLength)
+        length="%d"`, release.FileLength)
 	}
 
 	appcastXML += `
@@ -348,16 +225,6 @@ func (s *Server) handleSparkleAppcast(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(appcastXML))
-}
-
-// escapeXML escapes special XML characters
-func escapeXML(s string) string {
-	s = strings.ReplaceAll(s, "&", "&amp;")
-	s = strings.ReplaceAll(s, "<", "&lt;")
-	s = strings.ReplaceAll(s, ">", "&gt;")
-	s = strings.ReplaceAll(s, "\"", "&quot;")
-	s = strings.ReplaceAll(s, "'", "&apos;")
-	return s
 }
 
 // UpdateReleaseRequest is the request body for updating a release
@@ -374,7 +241,6 @@ type UpdateReleaseRequest struct {
 
 // handleUpdateRelease updates the release info for a platform (admin endpoint)
 func (s *Server) handleUpdateRelease(w http.ResponseWriter, r *http.Request) {
-	// Verify admin token (reuse UPDATE_SECRET from server auto-update)
 	token := r.Header.Get("X-Update-Token")
 	if !secureCompare(token, s.cfg.UpdateSecret) {
 		respondError(w, http.StatusUnauthorized, "unauthorized", "Invalid update token")
@@ -392,31 +258,35 @@ func (s *Server) handleUpdateRelease(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate required fields
 	if req.Version == "" || req.Build == 0 || req.DownloadURL == "" {
 		respondError(w, http.StatusBadRequest, "missing_fields", "version, build, and download_url are required")
 		return
 	}
 
-	appReleasesMu.Lock()
-	release, ok := appReleases[req.Platform]
-	if !ok {
-		release = &AppReleaseConfig{}
-		appReleases[req.Platform] = release
+	now := time.Now()
+	minOS := req.MinimumOSVersion
+	if minOS == "" {
+		minOS = "14.0"
 	}
 
-	release.Version = req.Version
-	release.Build = req.Build
-	release.ReleaseNotes = req.ReleaseNotes
-	release.DownloadURL = req.DownloadURL
-	release.EdSignature = req.EdSignature
-	release.FileLength = req.FileLength
-	release.PublishedAt = time.Now()
-
-	if req.MinimumOSVersion != "" {
-		release.MinimumOSVersion = req.MinimumOSVersion
+	release := &models.AppRelease{
+		Platform:         req.Platform,
+		Version:          req.Version,
+		Build:            req.Build,
+		ReleaseNotes:     req.ReleaseNotes,
+		DownloadURL:      req.DownloadURL,
+		MinimumOSVersion: minOS,
+		EdSignature:      req.EdSignature,
+		FileLength:       req.FileLength,
+		PublishedAt:      now,
+		UpdatedAt:        now,
 	}
-	appReleasesMu.Unlock()
+
+	if err := s.store.UpsertAppRelease(r.Context(), release); err != nil {
+		log.Printf("Failed to persist release: %v", err)
+		respondError(w, http.StatusInternalServerError, "server_error", "Failed to save release")
+		return
+	}
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"status":   "ok",
@@ -429,7 +299,6 @@ func (s *Server) handleUpdateRelease(w http.ResponseWriter, r *http.Request) {
 
 // handleGetRelease returns the current release info for a platform (admin endpoint)
 func (s *Server) handleGetRelease(w http.ResponseWriter, r *http.Request) {
-	// Verify admin token
 	token := r.Header.Get("X-Update-Token")
 	if !secureCompare(token, s.cfg.UpdateSecret) {
 		respondError(w, http.StatusUnauthorized, "unauthorized", "Invalid update token")
@@ -441,12 +310,13 @@ func (s *Server) handleGetRelease(w http.ResponseWriter, r *http.Request) {
 		platform = "macos"
 	}
 
-	appReleasesMu.RLock()
-	release, ok := appReleases[platform]
-	appReleasesMu.RUnlock()
-
-	if !ok {
-		respondError(w, http.StatusNotFound, "not_found", "No release found for platform: "+platform)
+	release, err := s.store.GetAppRelease(r.Context(), platform)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			respondError(w, http.StatusNotFound, "not_found", "No release found for platform: "+platform)
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "server_error", "Failed to get release")
 		return
 	}
 

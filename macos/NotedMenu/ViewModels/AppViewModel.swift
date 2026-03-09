@@ -135,16 +135,16 @@ final class AppViewModel: ObservableObject {
             let allNotebooks: [Notebook] = try await APIService.shared.get("notebooks")
             let filteredNotebooks = allNotebooks.filter { $0.deletedAt == nil }.sorted { $0.sortOrder < $1.sortOrder }
 
-            // Save to local storage
-            try dataStore.saveNotebooks(filteredNotebooks)
-
-            // Update UI
+            // Update UI first (before local save which may fail)
             notebooks = filteredNotebooks
 
             // Set default notebook if not set
             if defaultNotebookId.isEmpty, let first = notebooks.first {
                 defaultNotebookId = first.id.uuidString
             }
+
+            // Save to local storage (non-critical)
+            try? dataStore.saveNotebooks(filteredNotebooks)
         } catch {
             self.error = error.localizedDescription
         }
