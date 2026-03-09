@@ -28,6 +28,9 @@ final class LocalNote {
     /// When the note was soft-deleted (nil if not deleted)
     var deletedAt: Date?
 
+    /// Whether the note is starred (pinned to bottom)
+    var isStarred: Bool
+
     /// Link previews as JSON
     var linkPreviewsJSON: String?
 
@@ -56,6 +59,7 @@ final class LocalNote {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         deletedAt: Date? = nil,
+        isStarred: Bool = false,
         linkPreviewsJSON: String? = nil,
         syncStatus: SyncStatus = .synced,
         serverVersion: Int = 1,
@@ -69,6 +73,7 @@ final class LocalNote {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.deletedAt = deletedAt
+        self.isStarred = isStarred
         self.linkPreviewsJSON = linkPreviewsJSON
         self.syncStatusRaw = syncStatus.rawValue
         self.serverVersion = serverVersion

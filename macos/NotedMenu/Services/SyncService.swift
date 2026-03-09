@@ -108,7 +108,14 @@ final class SyncService: ObservableObject {
                     body: request
                 )
 
-                // Update local note with server data
+                // Server assigns a new UUID, so reassign pending images
+                // and delete the old local note to avoid duplicates
+                if serverNote.id != note.id {
+                    try dataStore.reassignImages(fromNoteId: note.id, toNoteId: serverNote.id)
+                    try dataStore.hardDeleteNote(id: note.id)
+                }
+
+                // Save the server note with its authoritative UUID
                 try dataStore.saveNote(serverNote, syncStatus: .synced)
 
             case .pendingUpdate:

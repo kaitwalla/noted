@@ -7,6 +7,7 @@ struct Note: Codable, Identifiable, Equatable {
     var plainText: String
     var isTodo: Bool
     var isDone: Bool
+    var isStarred: Bool
     var reminderAt: Date?
     var version: Int
     let createdAt: Date
@@ -21,6 +22,7 @@ struct Note: Codable, Identifiable, Equatable {
         case plainText = "plain_text"
         case isTodo = "is_todo"
         case isDone = "is_done"
+        case isStarred = "is_starred"
         case reminderAt = "reminder_at"
         case version
         case createdAt = "created_at"
@@ -196,6 +198,7 @@ struct NoteUpdateRequest: Codable {
     let plainText: String?
     let isTodo: Bool?
     let isDone: Bool?
+    let isStarred: Bool?
     let reminderAt: Date?
 
     enum CodingKeys: String, CodingKey {
@@ -203,6 +206,7 @@ struct NoteUpdateRequest: Codable {
         case plainText = "plain_text"
         case isTodo = "is_todo"
         case isDone = "is_done"
+        case isStarred = "is_starred"
         case reminderAt = "reminder_at"
     }
 }

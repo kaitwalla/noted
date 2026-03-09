@@ -300,6 +300,9 @@ func (s *Server) handleUpdateNote(w http.ResponseWriter, r *http.Request) {
 	if req.IsPublic != nil {
 		note.IsPublic = *req.IsPublic
 	}
+	if req.IsStarred != nil {
+		note.IsStarred = *req.IsStarred
+	}
 	if req.ReminderAt != nil {
 		note.ReminderAt = req.ReminderAt
 	}

@@ -33,41 +33,29 @@ struct NoteTimelineView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(groupedNotes, id: \.date) { group in
+                            ForEach(groupedUnstarredNotes, id: \.date) { group in
                                 Section {
                                     ForEach(group.notes) { note in
-                                        NoteBubble(
-                                            note: note,
-                                            images: noteImages[note.id] ?? [],
-                                            onEdit: { content in
-                                                Task {
-                                                    await viewModel.updateNote(note.id, content: content)
-                                                }
-                                            },
-                                            onDelete: {
-                                                Task {
-                                                    await viewModel.deleteNote(note.id)
-                                                }
-                                            },
-                                            onContentChanged: { newContent, newPlainText in
-                                                Task {
-                                                    await viewModel.updateNoteContent(note.id, content: newContent, plainText: newPlainText)
-                                                }
-                                            }
-                                        )
-                                        .id(note.id)
-                                        .transition(.asymmetric(
-                                            insertion: .scale.combined(with: .opacity),
-                                            removal: .opacity
-                                        ))
-                                        .task {
-                                            await fetchImagesForNote(note.id)
-                                        }
+                                        noteBubble(for: note)
                                     }
                                 } header: {
                                     Text(formatSectionDate(group.date))
                                         .font(.caption)
                                         .foregroundStyle(colors.secondaryText)
+                                        .padding(.top, 8)
+                                }
+                            }
+
+                            // Starred notes pinned at bottom
+                            if !starredNotes.isEmpty {
+                                Section {
+                                    ForEach(starredNotes) { note in
+                                        noteBubble(for: note)
+                                    }
+                                } header: {
+                                    Text("Starred")
+                                        .font(.caption)
+                                        .foregroundStyle(.yellow)
                                         .padding(.top, 8)
                                 }
                             }
@@ -197,10 +185,51 @@ struct NoteTimelineView: View {
         }
     }
 
-    // Group notes by date
-    private var groupedNotes: [NoteGroup] {
+    @ViewBuilder
+    private func noteBubble(for note: Note) -> some View {
+        NoteBubble(
+            note: note,
+            images: noteImages[note.id] ?? [],
+            onEdit: { content in
+                Task {
+                    await viewModel.updateNote(note.id, content: content)
+                }
+            },
+            onDelete: {
+                Task {
+                    await viewModel.deleteNote(note.id)
+                }
+            },
+            onToggleStarred: {
+                Task {
+                    await viewModel.toggleStarred(note.id)
+                }
+            },
+            onContentChanged: { newContent, newPlainText in
+                Task {
+                    await viewModel.updateNoteContent(note.id, content: newContent, plainText: newPlainText)
+                }
+            }
+        )
+        .id(note.id)
+        .transition(.asymmetric(
+            insertion: .scale.combined(with: .opacity),
+            removal: .opacity
+        ))
+        .task {
+            await fetchImagesForNote(note.id)
+        }
+    }
+
+    private var starredNotes: [Note] {
+        viewModel.notes.filter { $0.isStarred }
+    }
+
+    // Group unstarred notes by date
+    private var groupedUnstarredNotes: [NoteGroup] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: viewModel.notes) { note in
+        let unstarred = viewModel.notes.filter { !$0.isStarred }
+        let grouped = Dictionary(grouping: unstarred) { note in
             calendar.startOfDay(for: note.createdAt)
         }
 

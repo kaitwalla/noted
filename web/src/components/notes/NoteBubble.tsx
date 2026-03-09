@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format, isValid } from 'date-fns';
-import { Trash2, Edit2, Globe, GlobeLock, Link2 } from 'lucide-react';
+import { Trash2, Edit2, Globe, GlobeLock, Link2, Star } from 'lucide-react';
 import { useStore } from '../../store';
 import { api } from '../../api/client';
 import type { Note } from '../../types';
@@ -16,7 +16,7 @@ export function NoteBubble({ note }: NoteBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [images, setImages] = useState<Array<{ id: string; url: string }>>([]);
   const [copied, setCopied] = useState(false);
-  const { toggleNotePublic, removeNote, updateNote } = useStore();
+  const { toggleNotePublic, toggleNoteStarred, removeNote, updateNote } = useStore();
 
   // Fetch images for this note (re-fetch when note object changes)
   useEffect(() => {
@@ -321,6 +321,13 @@ export function NoteBubble({ note }: NoteBubbleProps) {
                 {copied && <span className="copied-text">Copied!</span>}
               </button>
             )}
+            <button
+              className={`star-btn ${note.is_starred ? 'is-starred' : ''}`}
+              onClick={() => toggleNoteStarred(note.id)}
+              title={note.is_starred ? 'Unstar' : 'Star'}
+            >
+              <Star size={14} fill={note.is_starred ? 'currentColor' : 'none'} />
+            </button>
             <button onClick={() => setIsEditing(true)} title="Edit">
               <Edit2 size={14} />
             </button>

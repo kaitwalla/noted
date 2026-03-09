@@ -27,6 +27,7 @@
         <attribute name="deletedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="isDone" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isStarred" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="isTodo" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="locallyModifiedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="notebookId" attributeType="UUID" usesScalarValueType="NO"/>

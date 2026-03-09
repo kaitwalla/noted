@@ -128,6 +128,17 @@ final class NotesViewModel {
     }
 
     @MainActor
+    func toggleStarred(_ id: UUID) async {
+        if let updated = localData.updateNote(id: id, isStarred: !(notes.first { $0.id == id }?.isStarred ?? false)) {
+            if let index = notes.firstIndex(where: { $0.id == id }) {
+                notes[index] = updated
+            }
+        }
+
+        scheduleSync()
+    }
+
+    @MainActor
     func deleteNote(_ id: UUID) async {
         // Delete locally first
         localData.deleteNote(id: id)

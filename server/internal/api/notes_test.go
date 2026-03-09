@@ -218,6 +218,130 @@ func TestNoteTodo(t *testing.T) {
 	}
 }
 
+func TestNoteStarred(t *testing.T) {
+	srv, token, notebookID, noteID := setupTestServerWithNote(t)
+
+	t.Run("new note is not starred by default", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/notes/"+noteID, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("got status %d, want %d", rec.Code, http.StatusOK)
+		}
+
+		var note models.Note
+		json.NewDecoder(rec.Body).Decode(&note)
+		if note.IsStarred {
+			t.Error("expected new note to not be starred")
+		}
+	})
+
+	t.Run("star a note", func(t *testing.T) {
+		body, _ := json.Marshal(map[string]interface{}{
+			"is_starred": true,
+		})
+		req := httptest.NewRequest(http.MethodPut, "/api/notes/"+noteID, bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("got status %d, want %d. Body: %s", rec.Code, http.StatusOK, rec.Body.String())
+		}
+
+		var note models.Note
+		json.NewDecoder(rec.Body).Decode(&note)
+		if !note.IsStarred {
+			t.Error("expected note to be starred after update")
+		}
+	})
+
+	t.Run("unstar a note", func(t *testing.T) {
+		body, _ := json.Marshal(map[string]interface{}{
+			"is_starred": false,
+		})
+		req := httptest.NewRequest(http.MethodPut, "/api/notes/"+noteID, bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("got status %d, want %d", rec.Code, http.StatusOK)
+		}
+
+		var note models.Note
+		json.NewDecoder(rec.Body).Decode(&note)
+		if note.IsStarred {
+			t.Error("expected note to not be starred after unstarring")
+		}
+	})
+
+	t.Run("starred field returned in list", func(t *testing.T) {
+		// Star the note first
+		body, _ := json.Marshal(map[string]interface{}{"is_starred": true})
+		req := httptest.NewRequest(http.MethodPut, "/api/notes/"+noteID, bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		// List notes and check starred field
+		req = httptest.NewRequest(http.MethodGet, "/api/notebooks/"+notebookID+"/notes", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec = httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("got status %d, want %d", rec.Code, http.StatusOK)
+		}
+
+		var notes []models.Note
+		json.NewDecoder(rec.Body).Decode(&notes)
+		if len(notes) != 1 {
+			t.Fatalf("got %d notes, want 1", len(notes))
+		}
+		if !notes[0].IsStarred {
+			t.Error("expected starred note to appear as starred in list")
+		}
+	})
+
+	t.Run("starring does not affect other fields", func(t *testing.T) {
+		// Get current state
+		req := httptest.NewRequest(http.MethodGet, "/api/notes/"+noteID, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		var before models.Note
+		json.NewDecoder(rec.Body).Decode(&before)
+
+		// Toggle starred
+		body, _ := json.Marshal(map[string]interface{}{"is_starred": !before.IsStarred})
+		req = httptest.NewRequest(http.MethodPut, "/api/notes/"+noteID, bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+		rec = httptest.NewRecorder()
+		srv.ServeHTTP(rec, req)
+
+		var after models.Note
+		json.NewDecoder(rec.Body).Decode(&after)
+
+		if after.PlainText != before.PlainText {
+			t.Errorf("plain_text changed: got %q, want %q", after.PlainText, before.PlainText)
+		}
+		if after.IsPublic != before.IsPublic {
+			t.Errorf("is_public changed: got %v, want %v", after.IsPublic, before.IsPublic)
+		}
+		if after.IsTodo != before.IsTodo {
+			t.Errorf("is_todo changed: got %v, want %v", after.IsTodo, before.IsTodo)
+		}
+	})
+}
+
 func TestNoteSearch(t *testing.T) {
 	srv, token, notebookID := setupTestServerWithNotebook(t)
 

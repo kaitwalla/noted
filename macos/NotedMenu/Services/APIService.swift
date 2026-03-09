@@ -399,18 +399,20 @@ extension APIService {
     }
 
     /// Updates an existing note
-    func updateNote(noteId: UUID, content: NoteContent, plainText: String) async throws -> Note {
+    func updateNote(noteId: UUID, content: NoteContent? = nil, plainText: String? = nil, isStarred: Bool? = nil) async throws -> Note {
         struct UpdateRequest: Encodable {
-            let content: NoteContent
-            let plainText: String
+            let content: NoteContent?
+            let plainText: String?
+            let isStarred: Bool?
 
             enum CodingKeys: String, CodingKey {
                 case content
                 case plainText = "plain_text"
+                case isStarred = "is_starred"
             }
         }
 
-        let request = UpdateRequest(content: content, plainText: plainText)
+        let request = UpdateRequest(content: content, plainText: plainText, isStarred: isStarred)
         return try await put("notes/\(noteId.uuidString)", body: request)
     }
 

@@ -212,8 +212,8 @@ struct NoteStreamView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    // Notes are sorted newest first, so reverse for chronological display
-                    ForEach(notes.reversed()) { note in
+                    // Unstarred notes in chronological order
+                    ForEach(notes.filter({ !$0.isStarred }).reversed()) { note in
                         HStack(alignment: .top, spacing: 4) {
                             NoteBubbleView(
                                 note: note,
@@ -237,6 +237,12 @@ struct NoteStreamView: View {
                                 Label("Edit", systemImage: "pencil")
                             }
 
+                            Button {
+                                Task { await toggleStarred(note) }
+                            } label: {
+                                Label(note.isStarred ? "Unstar" : "Star", systemImage: note.isStarred ? "star.fill" : "star")
+                            }
+
                             // Show conflict resolution option if this note has a conflict
                             if noteSyncStatus[note.id] == .conflict {
                                 Divider()
@@ -257,6 +263,51 @@ struct NoteStreamView: View {
                         }
                         .onTapGesture(count: 2) {
                             startEditing(note)
+                        }
+                    }
+
+                    // Starred notes pinned at bottom
+                    let starred = notes.filter { $0.isStarred }
+                    if !starred.isEmpty {
+                        Divider()
+                            .padding(.vertical, 4)
+                        Text("Starred")
+                            .font(.caption2)
+                            .foregroundColor(.yellow)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(starred) { note in
+                            HStack(alignment: .top, spacing: 4) {
+                                NoteBubbleView(
+                                    note: note,
+                                    images: noteImages[note.id] ?? [],
+                                    onContentChanged: { newContent, newPlainText in
+                                        Task { await updateNoteContent(note: note, content: newContent, plainText: newPlainText) }
+                                    }
+                                )
+                                if let status = noteSyncStatus[note.id], status != .synced {
+                                    SyncStatusIndicator(status: status)
+                                        .padding(.top, 4)
+                                }
+                            }
+                            .id(note.id)
+                            .contextMenu {
+                                Button {
+                                    startEditing(note)
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                Button {
+                                    Task { await toggleStarred(note) }
+                                } label: {
+                                    Label("Unstar", systemImage: "star.fill")
+                                }
+                                Divider()
+                                Button(role: .destructive) {
+                                    Task { await deleteNote(note) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                 }
@@ -349,6 +400,18 @@ struct NoteStreamView: View {
             if appViewModel.isOnline {
                 await syncService.syncNote(id: note.id)
                 loadNotesFromLocal()
+            }
+        } catch {
+            showError(error.localizedDescription)
+        }
+    }
+
+    private func toggleStarred(_ note: Note) async {
+        do {
+            let updated = try await APIService.shared.updateNote(noteId: note.id, isStarred: !note.isStarred)
+            try dataStore.saveNote(updated, syncStatus: .synced)
+            if let index = notes.firstIndex(where: { $0.id == note.id }) {
+                notes[index] = updated
             }
         } catch {
             showError(error.localizedDescription)

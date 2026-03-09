@@ -151,6 +151,7 @@ final class LocalDataStore {
             local.version = note.version
             local.updatedAt = note.updatedAt
             local.deletedAt = note.deletedAt
+            local.isStarred = note.isStarred
             local.linkPreviewsJSON = linkPreviewsJSON
             if syncStatus != .synced || local.syncStatus == .synced {
                 local.syncStatus = syncStatus
@@ -169,6 +170,7 @@ final class LocalDataStore {
                 createdAt: note.createdAt,
                 updatedAt: note.updatedAt,
                 deletedAt: note.deletedAt,
+                isStarred: note.isStarred,
                 linkPreviewsJSON: linkPreviewsJSON,
                 syncStatus: syncStatus,
                 serverVersion: note.version
@@ -357,6 +359,21 @@ final class LocalDataStore {
             sortBy: [SortDescriptor(\.createdAt)]
         )
         return try context.fetch(descriptor)
+    }
+
+    func reassignImages(fromNoteId: UUID, toNoteId: UUID) throws {
+        guard let context = context else { throw LocalDataStoreError.notInitialized }
+
+        let descriptor = FetchDescriptor<LocalNoteImage>(
+            predicate: #Predicate { $0.noteId == fromNoteId }
+        )
+        let images = try context.fetch(descriptor)
+
+        for image in images {
+            image.noteId = toNoteId
+        }
+
+        try context.save()
     }
 
     func deleteImagesForNote(noteId: UUID, hardDelete: Bool = false) throws {

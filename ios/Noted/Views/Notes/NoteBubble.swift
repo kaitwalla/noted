@@ -6,6 +6,7 @@ struct NoteBubble: View {
     var images: [NoteImage] = []
     let onEdit: (String) -> Void
     let onDelete: () -> Void
+    var onToggleStarred: (() -> Void)?
     var onContentChanged: ((NoteContent, String) -> Void)?
 
     @Environment(\.themeColors) private var colors
@@ -60,6 +61,13 @@ struct NoteBubble: View {
                             isEditing = true
                         } label: {
                             Label("Edit", systemImage: "pencil")
+                        }
+
+                        Button {
+                            HapticService.shared.lightTap()
+                            onToggleStarred?()
+                        } label: {
+                            Label(note.isStarred ? "Unstar" : "Star", systemImage: note.isStarred ? "star.fill" : "star")
                         }
 
                         Button {
@@ -165,6 +173,7 @@ struct EditNoteSheet: View {
                 plainText: "This is a test note with some content",
                 isTodo: false,
                 isDone: false,
+                isStarred: false,
                 reminderAt: nil,
                 version: 1,
                 createdAt: Date(),

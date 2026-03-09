@@ -5,6 +5,7 @@ struct Note: Codable, Identifiable, Equatable {
     let notebookId: UUID
     var content: NoteContent
     var plainText: String
+    var isStarred: Bool
     var reminderAt: Date?
     var version: Int
     let createdAt: Date
@@ -17,6 +18,7 @@ struct Note: Codable, Identifiable, Equatable {
         case notebookId = "notebook_id"
         case content
         case plainText = "plain_text"
+        case isStarred = "is_starred"
         case reminderAt = "reminder_at"
         case version
         case createdAt = "created_at"
@@ -226,6 +228,7 @@ extension Note {
         self.notebookId = localNote.notebookId
         self.content = content
         self.plainText = localNote.plainText
+        self.isStarred = localNote.isStarred
         self.reminderAt = nil
         self.version = localNote.version
         self.createdAt = localNote.createdAt

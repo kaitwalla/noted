@@ -57,6 +57,7 @@ interface AppState {
   updateNote: (noteId: string, updates: Partial<Note>) => Promise<void>;
   toggleNoteDone: (noteId: string) => Promise<void>;
   toggleNotePublic: (noteId: string) => Promise<void>;
+  toggleNoteStarred: (noteId: string) => Promise<void>;
   removeNote: (noteId: string) => Promise<void>;
 
   // URL sync helpers
@@ -194,6 +195,7 @@ export const useStore = create<AppState>((set, get) => ({
       is_todo: updates.is_todo,
       is_done: updates.is_done,
       is_public: updates.is_public,
+      is_starred: updates.is_starred,
       tag_ids: updates.tag_ids,
       reminder_at: updates.reminder_at,
     });
@@ -216,6 +218,16 @@ export const useStore = create<AppState>((set, get) => ({
     const note = get().notes.find((n) => n.id === noteId);
     if (note) {
       const updated = await api.updateNote(noteId, { is_public: !note.is_public });
+      set((state) => ({
+        notes: state.notes.map((n) => (n.id === noteId ? updated : n)),
+      }));
+    }
+  },
+
+  toggleNoteStarred: async (noteId) => {
+    const note = get().notes.find((n) => n.id === noteId);
+    if (note) {
+      const updated = await api.updateNote(noteId, { is_starred: !note.is_starred });
       set((state) => ({
         notes: state.notes.map((n) => (n.id === noteId ? updated : n)),
       }));

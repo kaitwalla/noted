@@ -670,6 +670,23 @@ body {
   color: var(--text-primary);
 }
 
+.star-btn.is-starred {
+  color: #f59e0b;
+  opacity: 1;
+}
+
+/* Starred notes section */
+.starred-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.starred-divider span {
+  color: #f59e0b;
+}
+
 /* Note editor */
 .note-editor {
   border-top: 1px solid var(--border);

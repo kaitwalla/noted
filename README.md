@@ -9,6 +9,7 @@ A chat-style notes application with server sync, supporting web and iOS platform
 - Image attachments with S3-compatible storage
 - To-do items with completion tracking
 - Tags and notebooks for organization
+- Starred notes pinned to bottom of chat
 - Full-text search
 - Reminders and scheduled notes
 - Offline-first iOS app with background sync
@@ -143,7 +144,7 @@ noted/
 - `GET /api/notebooks/:id/notes` - List notes in notebook
 - `POST /api/notebooks/:id/notes` - Create note
 - `GET /api/notes/:id` - Get note
-- `PUT /api/notes/:id` - Update note
+- `PUT /api/notes/:id` - Update note (supports `is_starred` to pin/unpin)
 - `DELETE /api/notes/:id` - Delete note
 
 ### Tags

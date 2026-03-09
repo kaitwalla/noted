@@ -28,6 +28,7 @@ final class NotesService {
         content: String? = nil,
         isTodo: Bool? = nil,
         isDone: Bool? = nil,
+        isStarred: Bool? = nil,
         reminderAt: Date? = nil
     ) async throws -> Note {
         let request = NoteUpdateRequest(
@@ -35,6 +36,7 @@ final class NotesService {
             plainText: content,
             isTodo: isTodo,
             isDone: isDone,
+            isStarred: isStarred,
             reminderAt: reminderAt
         )
         return try await api.patch("notes/\(id.uuidString)", body: request)

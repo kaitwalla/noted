@@ -113,6 +113,7 @@ final class LocalDataService {
         entity.plainText = content
         entity.isTodo = isTodo
         entity.isDone = false
+        entity.isStarred = false
         entity.version = 1
         entity.createdAt = now
         entity.updatedAt = now
@@ -124,7 +125,7 @@ final class LocalDataService {
         return toNote(entity)
     }
 
-    func updateNote(id: UUID, content: String? = nil, isTodo: Bool? = nil, isDone: Bool? = nil, reminderAt: Date?? = nil) -> Note? {
+    func updateNote(id: UUID, content: String? = nil, isTodo: Bool? = nil, isDone: Bool? = nil, isStarred: Bool? = nil, reminderAt: Date?? = nil) -> Note? {
         guard let entity = fetchNoteEntity(id: id) else { return nil }
 
         if let content = content {
@@ -137,6 +138,9 @@ final class LocalDataService {
         }
         if let isDone = isDone {
             entity.isDone = isDone
+        }
+        if let isStarred = isStarred {
+            entity.isStarred = isStarred
         }
         // Use double optional to distinguish "not provided" from "set to nil"
         if let reminder = reminderAt {
@@ -276,6 +280,7 @@ final class LocalDataService {
                     entity.plainText = note.plainText
                     entity.isTodo = note.isTodo
                     entity.isDone = note.isDone
+                    entity.isStarred = note.isStarred
                     entity.reminderAt = note.reminderAt
                     entity.version = Int32(note.version)
                     entity.updatedAt = note.updatedAt
@@ -290,6 +295,7 @@ final class LocalDataService {
                 entity.plainText = note.plainText
                 entity.isTodo = note.isTodo
                 entity.isDone = note.isDone
+                entity.isStarred = note.isStarred
                 entity.reminderAt = note.reminderAt
                 entity.version = Int32(note.version)
                 entity.createdAt = note.createdAt
@@ -375,6 +381,7 @@ final class LocalDataService {
             plainText: plainText,
             isTodo: entity.isTodo,
             isDone: entity.isDone,
+            isStarred: entity.isStarred,
             reminderAt: entity.reminderAt,
             version: Int(entity.version),
             createdAt: createdAt,
