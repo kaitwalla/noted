@@ -32,7 +32,15 @@ final class LocalDataStore {
             allowsSave: true
         )
 
-        container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        do {
+            container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            // Schema migration failed or DB corrupted - delete and retry
+            logger.error("ModelContainer creation failed, deleting store and retrying: \(error.localizedDescription, privacy: .public)")
+            deleteExistingStore()
+            container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        }
+
         context = ModelContext(container!)
 
         // Ensure sync metadata exists
@@ -40,6 +48,20 @@ final class LocalDataStore {
 
         isInitialized = true
         logger.info("LocalDataStore initialized successfully")
+    }
+
+    private func deleteExistingStore() {
+        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            logger.error("Could not locate Application Support directory")
+            return
+        }
+        let storeURL = appSupport.appendingPathComponent("default.store")
+        let walURL = appSupport.appendingPathComponent("default.store-wal")
+        let shmURL = appSupport.appendingPathComponent("default.store-shm")
+
+        for url in [storeURL, walURL, shmURL] {
+            try? FileManager.default.removeItem(at: url)
+        }
     }
 
     private func ensureSyncMetadata() throws {

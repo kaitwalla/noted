@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var keyMonitor: Any?
     @State private var selectedMenuBarIcon: MenuBarIconStyle = .noteSwirl
     @State private var showClearCacheConfirmation = false
+    @State private var showLogoutConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -321,6 +322,46 @@ struct SettingsView: View {
                                     }
                                 } message: {
                                     Text("This will remove all cached images. They will be re-downloaded as needed.")
+                                }
+                            }
+                        }
+                    }
+                    // Account
+                    if appViewModel.isAuthenticated {
+                        settingsSection("Account") {
+                            VStack(alignment: .leading, spacing: 12) {
+                                if let email = appViewModel.user?.email {
+                                    HStack {
+                                        Text("Signed in as:")
+                                            .foregroundColor(themeColors.text)
+                                        Spacer()
+                                        Text(email)
+                                            .foregroundColor(themeColors.secondaryText)
+                                    }
+
+                                    Divider()
+                                }
+
+                                Button {
+                                    showLogoutConfirmation = true
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                                        Text("Log Out")
+                                    }
+                                    .foregroundColor(.red)
+                                }
+                                .buttonStyle(.borderless)
+                                .alert("Log Out?", isPresented: $showLogoutConfirmation) {
+                                    Button("Cancel", role: .cancel) { }
+                                    Button("Log Out", role: .destructive) {
+                                        appViewModel.logout()
+                                        if let onDismiss = onDismiss {
+                                            onDismiss()
+                                        }
+                                    }
+                                } message: {
+                                    Text("This will clear all local data and cached images.")
                                 }
                             }
                         }

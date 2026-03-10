@@ -77,7 +77,7 @@ class MenuPanelController: NSObject {
     }
 
     private func createPanel() {
-        let panelSize = NSSize(width: 200, height: 180)
+        let panelSize = NSSize(width: 200, height: 220)
 
         let panel = KeyablePanel(
             contentRect: NSRect(origin: .zero, size: panelSize),
@@ -146,7 +146,9 @@ class MenuPanelController: NSObject {
 // MARK: - Menu Panel View
 
 struct MenuPanelView: View {
+    @EnvironmentObject var appViewModel: AppViewModel
     @Environment(\.themeColors) var themeColors
+    @State private var showLogoutConfirmation = false
 
     var onDismiss: () -> Void
     var onOpenNotebooks: () -> Void
@@ -169,6 +171,16 @@ struct MenuPanelView: View {
                 menuItem(title: "Settings...", icon: "gearshape", action: onSettings)
                 menuItem(title: "Check for Updates...", icon: "arrow.triangle.2.circlepath", action: onCheckUpdates)
 
+                if appViewModel.isAuthenticated {
+                    Divider()
+                        .background(themeColors.border)
+                        .padding(.vertical, 4)
+
+                    menuItem(title: "Log Out", icon: "rectangle.portrait.and.arrow.right", action: {
+                        showLogoutConfirmation = true
+                    })
+                }
+
                 Divider()
                     .background(themeColors.border)
                     .padding(.vertical, 4)
@@ -190,6 +202,15 @@ struct MenuPanelView: View {
             Button("") { onDismiss() }
                 .keyboardShortcut(.escape, modifiers: [])
                 .opacity(0)
+        }
+        .alert("Log Out?", isPresented: $showLogoutConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Log Out", role: .destructive) {
+                onDismiss()
+                appViewModel.logout()
+            }
+        } message: {
+            Text("This will clear all local data and cached images.")
         }
     }
 
