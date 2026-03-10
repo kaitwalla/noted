@@ -41,10 +41,11 @@ final class SyncService: ObservableObject {
             // Push pending changes first
             await pushPendingOperations()
 
-            // Then pull server updates
-            await pullServerUpdates()
+            // Then pull server updates (throws on failure so we
+            // don't advance lastSyncTime past missed changes)
+            try await pullServerUpdates()
 
-            // Update sync metadata
+            // Update sync metadata only after a successful pull
             let now = Date()
             try dataStore.updateLastSyncTime(now)
             lastSyncTime = now
@@ -201,36 +202,45 @@ final class SyncService: ObservableObject {
         }
     }
 
-    /// Pull updates from server since last sync
-    private func pullServerUpdates() async {
-        do {
-            // Get last sync time
-            let metadata = try dataStore.getSyncMetadata()
-            let lastSync = metadata?.lastSyncTime
+    /// Pull updates from server since last sync. Throws on failure so
+    /// ``syncAll()`` does not advance ``lastSyncTime`` past missed changes.
+    private func pullServerUpdates() async throws {
+        // Get last sync time
+        let metadata = try dataStore.getSyncMetadata()
+        let lastSync = metadata?.lastSyncTime
 
-            // Fetch updated notes
-            var path = "notes"
-            if let since = lastSync {
-                let formatter = ISO8601DateFormatter()
-                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                let sinceString = formatter.string(from: since)
-                path = "notes?since=\(sinceString)"
+        // Fetch updated notes
+        var path = "notes"
+        if let since = lastSync {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime]
+            let sinceString = formatter.string(from: since)
+            if let encoded = sinceString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+                path = "notes?since=\(encoded)"
             }
+        }
 
-            let updatedNotes: [Note] = try await APIService.shared.get(path)
+        let updatedNotes: [Note] = try await APIService.shared.get(path)
 
-            for serverNote in updatedNotes {
-                try await processServerNote(serverNote)
+        for serverNote in updatedNotes {
+            try await processServerNote(serverNote)
+        }
+
+        // Fetch notebooks and reconcile deletions
+        let serverNotebooks: [Notebook] = try await APIService.shared.get("notebooks")
+        let activeNotebooks = serverNotebooks.filter { $0.deletedAt == nil }
+        let serverNotebookIds = Set(activeNotebooks.map { $0.id })
+
+        for notebook in activeNotebooks {
+            try dataStore.saveNotebook(notebook, syncStatus: .synced)
+        }
+
+        // Remove local notebooks that no longer exist on the server
+        let localNotebooks = try dataStore.fetchNotebooks()
+        for local in localNotebooks {
+            if !local.syncStatus.isPending && !serverNotebookIds.contains(local.id) {
+                try dataStore.deleteNotebook(id: local.id, syncStatus: .synced)
             }
-
-            // Also fetch notebooks
-            let notebooks: [Notebook] = try await APIService.shared.get("notebooks")
-            for notebook in notebooks.filter({ $0.deletedAt == nil }) {
-                try dataStore.saveNotebook(notebook, syncStatus: .synced)
-            }
-
-        } catch {
-            lastError = error.localizedDescription
         }
     }
 

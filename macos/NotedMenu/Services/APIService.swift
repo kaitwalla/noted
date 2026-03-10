@@ -383,7 +383,7 @@ extension APIService {
     /// - Returns: Array of notes updated since the given date (including deleted)
     func getNotesUpdatedSince(_ since: Date) async throws -> [Note] {
         let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.formatOptions = [.withInternetDateTime]
         let sinceString = formatter.string(from: since)
         guard let encodedSince = sinceString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
             throw APIError.invalidResponse
